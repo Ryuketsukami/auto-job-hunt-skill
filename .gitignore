@@ -1,0 +1,21 @@
+# Everyone's data. None of it is ever pushed anywhere.
+people/*
+!people/README.md
+!people/.gitkeep
+
+# Credentials, belt and braces — people/* already covers these.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Rendered artifacts outside a person directory
+*.pdf
+!templates/**/*.pdf
+
+__pycache__/
+*.py[cod]
+.DS_Store
+.venv/
+node_modules/

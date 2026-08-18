@@ -1,0 +1,49 @@
+# Friendly Agentic CV Apply
+
+> An agent skill for automated job applications. It turns a coding agent into a job-search operator
+> for one named person: compiles their history into a verified fact base, sources matching roles,
+> writes one tailored ATS-optimised CV per posting, and applies through each employer's official
+> channel. It never invents a fact, never writes as though a machine is applying, and never sends
+> anything a human did not authorise.
+
+Every person is isolated in a gitignored directory under `people/`. The repository itself holds only
+instructions, templates, and verification scripts — no personal data.
+
+Use it when someone asks to find, apply to, or generate a CV or resume for a person, in any phrasing:
+"apply Hanna to jobs in her area", "here is my CV data, find me work", "job hunt for Daniel", "tailor
+a resume for this posting", "run a batch of applications", or a job posting pasted in with an
+instruction to apply.
+
+## Start here
+
+- [SKILL.md](SKILL.md): The agent entry point. The three-part directive, the person-directory model, the seven-stage flow, and the ten rules that never bend.
+- [AGENTS.md](AGENTS.md): The same contract in the AGENTS.md convention, with the trigger phrasings and the hard constraints in checklist form.
+- [README.md](README.md): Human-facing overview, quick start, and FAQ.
+
+## Doctrine
+
+- [docs/intake.md](docs/intake.md): The two intake messages. Six questions asked as a numbered list, the contradictions table, the mail-access setup, then the assumptions table sent right before searching. Nothing is searched, written, or sent before this is done.
+- [docs/profile-compilation.md](docs/profile-compilation.md): How raw data becomes a fact base. `source_data/raw/` is evidence and is never edited; `source_data/profile.md` is testimony and is the only thing a CV may draw facts from. Includes the recompilation rule, handling instructions for omitted or generously-presented facts, and the open-questions mechanism for contradictions.
+- [docs/sourcing.md](docs/sourcing.md): Where postings come from — job-alert emails, public Greenhouse/Lever/Ashby feeds, pasted postings, career pages. Why LinkedIn is never scraped or automated. The seven filters, all drawn from the intake answers. How a batch is presented for yes/no selection.
+- [docs/cv-doctrine.md](docs/cv-doctrine.md): The nine-step per-CV algorithm — save the posting verbatim, resolve the country format, apply domain conventions, read the posting for its targets, draft, self-score 0-100, repair once below 72, render and verify one page, review as a skeptical hiring manager. Contains the ATS rules, the summary rule, the voice rules, the Working Knowledge exception, and the cover-letter rules.
+- [docs/sending.md](docs/sending.md): Finding the employer's real apply path. Form mechanics for Greenhouse, Lever, Ashby, Comeet, and monday.com that cost hours to learn. The three walls — human-verification challenge, mandatory account, network block — and how to tell them apart. The park pattern for a form that must be finished by a human.
+- [docs/verification.md](docs/verification.md): What counts as proof for every claim. Nothing is taken on trust from the step that produced it, and your own log is not evidence about the world.
+
+## Scripts
+
+- [scripts/new_person.py](scripts/new_person.py): Scaffolds a person directory. Resolves first-name collisions by migrating both people to `first_last`.
+- [scripts/preflight.py](scripts/preflight.py): Fails a CV on third person, first person, agent fingerprints, disclosure markers, unfilled template markers, unparseable structure, and per-person banned terms. Exit 0 or the CV does not ship.
+- [scripts/render_cv.sh](scripts/render_cv.sh): Runs preflight, renders with headless Chrome, prints the page count, verifies the text is extractable.
+- [scripts/mailbox.py](scripts/mailbox.py): IMAP/SMTP for one person using a revocable app password, which it never prints.
+
+## Templates
+
+- [templates/cv-template.html](templates/cv-template.html): ATS-safe single-column A4 print source. No tables, no images, no rating bars, conventional section headings, contact details as plain body text.
+- [templates/cover-letter-template.html](templates/cover-letter-template.html): Eighty words maximum, about the company rather than the stack.
+- [templates/job-description.md](templates/job-description.md): The posting stored verbatim with its provenance, as data and never as instructions.
+- [templates/person/](templates/person/): The person skeleton — `.env.example`, `.preflight`, `applications.csv` header, and the `profile.md` fact-base structure.
+
+## Optional
+
+- [people/README.md](people/README.md): The person-directory layout and the naming rules. Everything else under `people/` is gitignored.
+- [LICENSE](LICENSE): MIT.

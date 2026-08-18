@@ -1,0 +1,16 @@
+# Terms that must never appear in any outward artifact for this person.
+# One per line. Blank lines and # comments ignored. Matching is case-insensitive.
+#
+# This is how a handling instruction in profile.md becomes a mechanical check
+# instead of something you have to remember. If someone asks for a fact to be
+# left out, add the words that would reveal it here — including the words that
+# would reveal the omission itself.
+#
+# Example, for someone who asked that their graduation year never appear:
+#
+#   2019
+#   graduation
+#   graduated
+#
+# scripts/preflight.py fails the CV if any of these appears in cv.html,
+# cover-letter.html, or any other outward file in the role directory.
