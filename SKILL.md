@@ -120,7 +120,7 @@ cost hours, the three walls, and the park pattern for a form you must not finish
    not go on a CV. If it is missing: leave it out, or ask. Never infer it.
 2. **Never write the person in the third person, and never leave a fingerprint.** No `he`, `she`,
    `they`, or their name as the subject of their own bullets — and equally **no `I`, `my`, or `me`.**
-   A CV uses the implied subject: *"Built the deployment pipeline"*, never *"He built"*, *"Allan
+   A CV uses the implied subject: *"Built the deployment pipeline"*, never *"He built"*, *"Hanna
    built"*, or *"I built"*. Nothing anywhere may indicate that an agent wrote, assembled, scored, or
    submitted the application — no tool names, no model names, no "generated", no "as an AI", no
    meta-commentary, no leftover template markers. `scripts/preflight.py` enforces this; it is not
