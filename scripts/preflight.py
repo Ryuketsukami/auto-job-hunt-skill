@@ -163,6 +163,13 @@ def check_file(path: Path, banned: list[str], names: list[str], is_letter: bool)
         m = re.search(r"\{\{[^}]*\}\}", ln)
         if m and not re.match(r"\s*(?:<!--|#|\*)", ln):
             add("ERROR", i, "an unfilled {{TEMPLATE}} marker survived into the artifact", m, ln)
+        if not is_letter and not re.match(r"\s*(?:<!--|#|\*)", ln):
+            m = re.search(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+", ln)
+            if m and "mailto:" not in ln:
+                add("ERROR", i, "a visible email that is not a mailto: hyperlink — contact details must be clickable", m, ln)
+            m = re.search(r"linkedin\.com/\S+", ln, re.I)
+            if m and not re.search(r"href=\"https?://[^\"]*linkedin\.com", ln, re.I):
+                add("ERROR", i, "a visible LinkedIn URL that is not an https hyperlink — contact details must be clickable", m, ln)
 
     # Visible-text checks.
     for i, ln in visible_lines(path):

@@ -100,8 +100,12 @@ Copy `templates/cv-template.html` into the role directory as `cv.html` and fill 
   Languages. Order may change; labels stay conventional.
 - **One date format** on every dated entry. Reverse-chronological everywhere.
 - **Lead each role with its most posting-relevant, quantified achievement.**
-- **Contact details as plain body text.** Email as a bare address, URLs bare. Never an icon, never
-  split across lines, never only in a header or footer — many parsers discard both.
+- **Contact details as visible text, linked.** The visible text stays a bare address or bare URL —
+  never an icon, never split across lines, never only in a header or footer, because many parsers
+  discard both. But each one is **also a real hyperlink** for the human reader: the email wrapped in
+  `mailto:`, every URL (LinkedIn, portfolio) in an `https://` anchor, and styled so it *looks* like a
+  link — underlined, link-coloured. A recruiter who cannot click the email in the PDF has been handed
+  friction for no reason. `preflight.py` fails a visible email or LinkedIn URL that is not an anchor.
 - **Protect the evidence.** Certifications, awards, and quantified outcomes are the rarest credible
   signals. Retarget their framing; never cut them, and never compress a named specific into a
   generic. Keep one real distinctive differentiator even when it is slightly off-theme.
@@ -170,6 +174,14 @@ answer is always one page.
 
 An A4 page holds roughly 500 words of CV: summary at most 3 lines; about 4 experience or project
 entries at roughly 3 bullets each; each bullet ideally one line of about 16 words.
+
+The mirror failure is a page that is mostly empty. **Never leave a large blank area at the bottom**
+beyond the page's natural padding: if the content ends well short of the bottom margin, scale the
+presentation up — body size first, then headings and spacing — until most of the blank is absorbed
+(while still printing `pages [b'1']`). A page that is two-thirds full reads as a thin candidate, not
+a concise one. Same discipline as the overflow rule, in reverse: adjust presentation, never invent
+content to fill space. Verify visually — render the PDF to an image and look at where the content
+ends; the page count alone cannot see emptiness.
 
 ### 9. Read it as a skeptical hiring manager
 

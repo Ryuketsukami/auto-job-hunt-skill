@@ -43,7 +43,7 @@
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  a { color: inherit; text-decoration: none; }
+  a { color: #2456b3; text-decoration: underline; text-underline-offset: 2px; }
 
   /* Header */
   .name { font-size: 25px; font-weight: 800; letter-spacing: -0.4px; color: #22345e; line-height: 1; margin: 0; }
@@ -92,18 +92,21 @@
 </head>
 <body>
 
-  <!-- Contact details as plain body text. Email bare, URLs bare. Never an icon,
-       never split across lines, never only in a header or footer element — many
-       parsers discard both. City or country only; no street address. -->
+  <!-- Contact details as visible text, linked. The visible text stays a bare
+       address / bare URL (parser-safe), but each one is a real anchor — mailto:
+       for the email, https:// for every URL, tel: for the phone — underlined and
+       link-coloured so a human can click them in the PDF. Never an icon, never
+       split across lines, never only in a header or footer element — many parsers
+       discard both. City or country only; no street address. -->
   <header>
     <h1 class="name">{{FULL_NAME}}</h1>
     <!-- Aim at the TARGET role: seniority the person actually has, 3-4 core
          technologies, a specialisation. Never relabel a real past job title. -->
     <div class="headline">{{HEADLINE}}</div>
     <div class="contact">
-      {{EMAIL}}
-      <span class="dot">·</span> {{PHONE}}
-      <span class="dot">·</span> {{PROFILE_URL}}
+      <a href="mailto:{{EMAIL}}">{{EMAIL}}</a>
+      <span class="dot">·</span> <a href="tel:{{PHONE}}">{{PHONE}}</a>
+      <span class="dot">·</span> <a href="https://{{PROFILE_URL}}">{{PROFILE_URL}}</a>
       <span class="dot">·</span> {{LOCATION}}
     </div>
     <div class="rule"></div>
