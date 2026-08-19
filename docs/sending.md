@@ -136,14 +136,22 @@ Two things worth knowing:
   into an image puzzle at the end. The answer is not a stealth plugin or a patched
   `navigator.webdriver`. It is the park pattern below.
 
-### 2. A mandatory account — reroute
+### 2. A mandatory account — reroute, or the person opens it
 
-Some aggregators hide the apply button behind registration. **No third-party account is ever created in
-someone's name** — it means choosing and storing a password as them and signing them up to whatever the
-marketing checkbox says.
+Some aggregators hide the apply button behind registration. **An account is never registered by an
+agent** — registration means choosing and storing a password as the person, accepting terms and
+marketing consents in their name, and passing the human-verification gate that signup flows carry
+(taasiya.co.il, for one, fronts `/register/` with a Cloudflare challenge and its forms with
+reCAPTCHA). That gate is wall 1, and it exists precisely to stop this.
 
-The workaround is nearly always available and better: find the employer's own channel — their ATS
-board, their careers page, a published recruiting address — and go direct.
+Two ways through, in order:
+
+- **Reroute.** Find the employer's own channel — their ATS board, their careers page, a published
+  recruiting address — and go direct. Nearly always available, and better.
+- **The person opens the account themselves** — two minutes of their time — and hands the credentials
+  over into their `.env`. From there, driving the account is normal work, on the same footing as
+  their mailbox: log in, fill, submit, verify a named confirmation, record. The account's actions
+  are theirs because they opened it and authorised the use.
 
 ### 3. A network or WAF block — diagnose before recording
 
