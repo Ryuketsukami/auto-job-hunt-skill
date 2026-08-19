@@ -101,6 +101,20 @@ inside its per-role directory. A file called `..._CV_Acme.pdf` tells Acme it is 
 
 ---
 
+## Email sends
+
+`scripts/mailbox.py` sends from the person's own address. Two things it learned the hard way:
+
+- **A send that hangs is a blocked port, not a slow server.** Cloud hosts commonly block outbound
+  25 and 465 (Hetzner does); the socket sits in `SYN-SENT` forever. Port 587 with STARTTLS is
+  usually open — set `SMTP_PORT=587` in the person's `.env`, and `mailbox.py` switches to STARTTLS
+  on that port by itself.
+- **`make_msgid()` with no domain argument stamps the machine's hostname** into the Message-ID
+  header of every mail. Headers are part of the application; a hostname that says automation is a
+  fingerprint. `mailbox.py` stamps the sender's own mail domain instead.
+
+---
+
 ## Walls
 
 Three recur, and the difference matters, because two have workarounds and one does not.
@@ -178,6 +192,13 @@ never quietly recorded as sent.**
 
 One row per application in `applications.csv`, written **after** the proof exists — not after the
 click. The proof is a confirmation page or a message-id from the mail server.
+
+**Archive what was sent, the moment it is recorded.** Copy the exact artifacts that went out — the
+rendered PDF, the `cv.html` that produced it, the email body or form answers, and the
+`job-description.md` capture — into `people/<person>/sent_archive/<date>-<role-dir>/`, with a short
+`sent.md` naming the channel, recipient, subject and proof id. `created_data/` is a workshop; its
+files get edited, re-rendered and reused. The archive is the record of what the employer actually
+received, and nothing in it is ever edited after the fact.
 
 The two columns worth sorting by:
 

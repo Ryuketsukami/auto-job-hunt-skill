@@ -114,7 +114,9 @@ def cmd_send(cfg: dict[str, str], args: argparse.Namespace) -> int:
     msg["To"] = args.to
     msg["Subject"] = args.subject
     msg["Date"] = email.utils.formatdate(localtime=True)
-    msg["Message-ID"] = email.utils.make_msgid()
+    # Domain from the sending address, not the local hostname — the default leaks the
+    # machine name into the raw headers, and headers must not fingerprint the setup.
+    msg["Message-ID"] = email.utils.make_msgid(domain=cfg["MAIL_ADDRESS"].rpartition("@")[2])
     msg.set_content(body)
 
     for path in args.attach or []:
@@ -133,7 +135,16 @@ def cmd_send(cfg: dict[str, str], args: argparse.Namespace) -> int:
         return 0
 
     ctx = ssl.create_default_context()
-    with smtplib.SMTP_SSL(cfg["SMTP_HOST"], int(cfg["SMTP_PORT"]), context=ctx) as S:
+    port = int(cfg["SMTP_PORT"])
+    # 587 is the STARTTLS submission port; anything else gets implicit TLS. Some hosts
+    # block outbound 465 (Hetzner does) — set SMTP_PORT=587 in .env if sends time out.
+    if port == 587:
+        S = smtplib.SMTP(cfg["SMTP_HOST"], port, timeout=30)
+    else:
+        S = smtplib.SMTP_SSL(cfg["SMTP_HOST"], port, context=ctx, timeout=30)
+    with S:
+        if port == 587:
+            S.starttls(context=ctx)
         try:
             S.login(cfg["MAIL_ADDRESS"], cfg["MAIL_APP_PASSWORD"])
         except smtplib.SMTPAuthenticationError:
