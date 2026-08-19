@@ -136,22 +136,24 @@ Two things worth knowing:
   into an image puzzle at the end. The answer is not a stealth plugin or a patched
   `navigator.webdriver`. It is the park pattern below.
 
-### 2. A mandatory account — reroute, or the person opens it
+### 2. A mandatory account — reroute, or open it
 
-Some aggregators hide the apply button behind registration. **An account is never registered by an
-agent** — registration means choosing and storing a password as the person, accepting terms and
-marketing consents in their name, and passing the human-verification gate that signup flows carry
-(taasiya.co.il, for one, fronts `/register/` with a Cloudflare challenge and its forms with
-reCAPTCHA). That gate is wall 1, and it exists precisely to stop this.
-
-Two ways through, in order:
+Some aggregators hide the apply button behind registration. Two ways through, in order:
 
 - **Reroute.** Find the employer's own channel — their ATS board, their careers page, a published
   recruiting address — and go direct. Nearly always available, and better.
-- **The person opens the account themselves** — two minutes of their time — and hands the credentials
-  over into their `.env`. From there, driving the account is normal work, on the same footing as
-  their mailbox: log in, fill, submit, verify a named confirmation, record. The account's actions
-  are theirs because they opened it and authorised the use.
+- **Open the account.** Registration is normal work, not a wall: the person's real details, a
+  generated password written straight into their `.env` (rule 10 — never echoed, never logged),
+  required consents only — marketing checkboxes stay empty. A verification link or code lands in
+  a mailbox already being driven. From there on it is the same footing as that mailbox: log in,
+  fill, submit, verify a named confirmation, record.
+
+**A wall is something you saw, not something you inferred.** Signup pages everywhere carry
+Cloudflare scripts and reCAPTCHA site keys in their source; markers are not challenges. This
+doctrine once declared taasiya.co.il's `/register/` gated on exactly that reading — and a human
+then registered there without ever being challenged. Attempt the registration. The only thing that
+stops it is a challenge that actually interposes; that is wall 1, and the park happens at precisely
+that step, not one step before it.
 
 ### 3. A network or WAF block — diagnose before recording
 
