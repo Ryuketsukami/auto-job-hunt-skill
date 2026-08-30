@@ -83,8 +83,18 @@ Known dead ends, so you do not spend an hour rediscovering them:
 - **Workable's widget** (`apply.workable.com/api/v1/widget/accounts/<slug>?details=true`) answers 200
   with zero jobs; the v3 path 404s.
 - **Comeet** backs a large share of Israeli boards, but its API needs a company uid *and* a token that
-  only the careers page exposes. Read the rendered board instead of guessing an endpoint.
+  only the careers page exposes. Read the rendered board instead of guessing an endpoint — and know
+  that `comeet.com/jobs/…` pages are JS-rendered: to a non-JS fetcher they answer *"there are
+  currently no open positions"* even when roles exist. **An empty Comeet render proves nothing.**
+  Confirm through another channel before reporting a board empty.
 - **Teamtailor** (`<company>.teamtailor.com`) carries JSON-LD job schema and parses cleanly.
+- **Slug guessing 404'd but the company careers page exists?** Read the page source before giving up:
+  Greenhouse embeds leak the real board token in the page's JS (a script fetching
+  `boards-api.greenhouse.io/v1/boards/<token>/jobs` — the token is often not the company's obvious
+  name). One grep of the careers page or its main JS file recovers the whole feed.
+- **LinkedIn public job-view pages answer 999/404 to fetchers.** Requirements for an alert-sourced
+  role must come from §2 or §4; if neither yields them, the role is not presentable — name it to the
+  person as an unverified lead instead of presenting it half-known.
 
 ---
 
