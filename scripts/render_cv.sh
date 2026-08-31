@@ -31,7 +31,11 @@ if [ -f "$PERSON_DIR/.person" ]; then
 else
   NAME="$(basename "$PERSON_DIR")"
 fi
-SAFE_NAME="$(printf '%s' "$NAME" | tr ' ' '_' | tr -cd 'A-Za-z0-9_-')"
+# Transliterate before stripping — tr -cd would delete an ü outright and mangle the name.
+SAFE_NAME="$(printf '%s' "$NAME" \
+  | sed -e 's/ä/ae/g; s/ö/oe/g; s/ü/ue/g; s/Ä/Ae/g; s/Ö/Oe/g; s/Ü/Ue/g; s/ß/ss/g' \
+  -e 's/é/e/g; s/è/e/g; s/ê/e/g; s/á/a/g; s/à/a/g; s/í/i/g; s/ó/o/g; s/ú/u/g; s/ñ/n/g; s/ç/c/g' \
+  | tr ' ' '_' | tr -cd 'A-Za-z0-9_-')"
 OUT="$DIR/${SAFE_NAME}_${SUFFIX}.pdf"
 
 echo "preflight $DIR"

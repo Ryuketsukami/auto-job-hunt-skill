@@ -24,6 +24,20 @@ Recon each posting before touching a form. The patterns that recur:
   `comeet.co/jobs/<companyUid>/<positionUid>/apply?token=<token>`, and all three identifiers come out
   of a JS blob in the careers page HTML. The form cannot be submitted by a driven browser, but each
   position publishes an email address that reaches the same pipeline.
+- **An aggregator's "apply" link that chains through an ad tracker** (gute-jobs.de → jobspreader.com)
+  can dead-end in an interstitial carrying a hidden reCAPTCHA. That chain is advertising plumbing,
+  not the official path. Search the employer's own careers site for the same requisition — it is
+  usually there, sometimes with an account-free form the aggregator never showed.
+- **A Bundesagentur für Arbeit posting with no contact block and no external URL** still has an
+  official path: the employer's own published application address, with the BA Referenznummer in
+  the subject line so the recipient can place it.
+- **A job list that renders empty may sit in an iframe gated on the cookie dialog.** jobactive.de's
+  listings load only after the site's own consent prompt is answered; the board iframe underneath
+  (`bewerbercenter.jobactive.de/job/listing/external?jobBoard=<n>`) is directly navigable after that.
+- **The careers page may not list every role.** One employer's page showed only its core-business
+  jobs; the IT vacancies existed solely on its ATS tenant (`<company>.softgarden.io/de/vacancies`).
+  When a posting names a company whose careers page lacks the role, probe the common ATS domains
+  before concluding the posting is stale.
 
 Greenhouse exposes its required fields without authentication, which is the cheapest way to know in
 advance whether a form will block:
@@ -46,6 +60,25 @@ Each of these was paid for once. Read them before driving a form, not after.
   inbox, fill `#security-input-0` through `#security-input-7`, submit again. A jump to ~13 console
   errors is the normal signature of that gate, not a failure. A stale code is cheap — clicking Submit
   again mails a fresh one.
+- **The code is mixed-case** (e.g. shaped like `XSzk9gAI`), so an `[A-Z0-9]{8}` extractor silently
+  misses it, and the mail wraps it in prose — anchor on the phrase instead:
+  `/security code field[\s\S]{0,120}?\b([A-Za-z0-9]{8})\b/i`, with a standalone-line
+  `/^\s*([A-Za-z0-9]{8})\s*$/m` fallback. Test any new extractor against a real code mail before
+  trusting it: a looser variant of this regex once matched the word "security" itself.
+- **The code mail can lag four minutes or more.** A 180-second poll declares a false wall; poll the
+  mailbox for at least 480 seconds before concluding the code never came.
+- **React hydration wipes fills made in the first ~2 seconds.** Values typed the moment
+  `#first_name` appears are silently emptied when the bundle finishes booting. Wait ~2s after the
+  field renders, fill, then run a second re-fill pass over the basics before verifying.
+- **The country control `#country` is a react-select combobox**, not the intl-tel-input it appears
+  to be — the `.iti__country-list` in the DOM is a 0×0 vestige and a click on it times out. Open
+  `#country`, type the country, click the `[id^="react-select-country-option"]` entry, and verify
+  via the `.iti__selected-country` flag title.
+- **The location autocomplete is a city/district geocoder with no country-level entries.** Typing a
+  bare country offers only foreign cities that contain the string. Its hierarchy is
+  City, District, Country — when the profile holds only a region ("Israel, center"), the honest
+  match is the district-level node (e.g. "Tel Aviv, Israel"), and the choice is disclosed in the
+  ledger.
 - React forms carry `id` attributes but **empty `name` attributes**. Target by `id`. Multi-selects have
   literal brackets in the id. Dropdowns are react-select, not `<select>`.
 - **react-select keeps its chosen option in component state**, rendered as a `[class*="single-value"]`
@@ -79,6 +112,102 @@ Each of these was paid for once. Read them before driving a form, not after.
 - Can reject a completed submit as *"flagged as possible spam"*, and its own advice is to submit again.
   A re-click on a still-filled page is the fix — which is an argument for parking rather than refilling.
 
+**AllJobs (alljobs.co.il)**
+
+- **Login is a passwordless OTP widget** in an iframe on `app.alljobs.co.il/auth/...`. It boots
+  slowly — poll up to 60s for the email input; a fixed wait reads an empty spinner.
+- **Entering a registered email fires an SMS code to the account's phone**, not a mail. Warn the
+  person their phone will buzz. After the ~60s countdown a second button appears —
+  *"הקוד לא הגיע, שלחו לי גם למייל"* — which mails a 5-digit code instead. That is the drivable
+  path: read it from the mailbox, fill the five `input[type=tel]` boxes (they auto-advance).
+- **An email you thought was unregistered may not be.** The SMS-not-mail behaviour on "sign up" is
+  how an existing account announces itself. Check the person's history before assuming.
+- **CV management** lives at `/User/UserCVsPanel/CVManagement.aspx`. Upload is three steps and fails
+  silently if shortened: click `#aUploadNewCV`, set the file on `#txtFileUploadCV`, then **fill the
+  display-name field `#txtFileUploadCVName`** — the commit function validates it and does nothing
+  while it is empty. The save IMG `#btn-save` is overlaid by a pointer-intercepting div, so a real
+  click times out; invoke the page's own `UploadNewCV(false)` instead. Success is the list counter
+  incrementing (`סה"כ N קורות חיים`), not the absence of an error.
+- **Never touch CVs already on the account** — they are the person's own uploads.
+- **The apply click on a stale session pops a fresh OTP round; on a fresh one it sends
+  immediately** — with the account's newest CV and no picker. So the order is fixed: upload the
+  tailored CV first, verify it is the newest on the account, then click. The confirmation popup
+  names the file it sent ("שם הקובץ: ...") — read it to verify the right CV went.
+- **Each OTP round costs the person a code on their phone or in their inbox.** Batch everything
+  into one authenticated session, and tell the person codes are coming — a flood of unexplained
+  OTPs reads as fraud to the account's owner.
+- **Two auth iframes coexist**, both with `id="LoginRegisterIframe"` — a page-level login widget
+  and the apply popup's own. First-match-by-URL finds the wrong one; a `fill()` on the covered
+  background widget even *succeeds* (fill bypasses hit-testing) while the click is intercepted.
+  Select the frame whose iframe element sits inside `#job-sendcv-view`.
+- **Match the button to the job — by its own card, never by ancestry search.** A job page carries
+  a rail of similar-job cards, each with its own `send-cv-btn`. Walking up the DOM looking for the
+  wanted JobID in `outerHTML` false-matches once an ancestor is broad enough to contain the whole
+  page. Resolve each button to its enclosing card and extract that card's single JobID; if no
+  button resolves to the wanted job exactly, click nothing.
+- **Some listings are paid-tier only** ("פתוחה ללקוחות AllJobs VIP בלבד", ₪59/month) — the apply
+  redirects to a credit-card page. Payment is never entered; a paid-gated role is an operator
+  decision. Watch for a redirect to `CreditCard`/`Purchase` URLs after any apply click.
+- **Proof of a send is the job page's own applied banner** — "הגשת מועמדות למשרה זו בתאריך ..." —
+  which persists server-side on a fresh load. AllJobs sends no confirmation email.
+
+**HeyJobs (heyjobs.co)**
+
+- The CTA "Ich bin interessiert" is an `<a>`, and overlays love to intercept the click — skip it and
+  navigate straight to `<job-url>/apply/now`.
+- **Entering an email creates an account** and mails a password-set link. Set the password from that
+  link, write it into the person's `.env`, and keep the browser storage state — funnel progress
+  lives server-side on the account.
+- The funnel is a step wizard whose question textareas carry per-session UUID names plus an unnamed
+  decoy. Target fields by their visible label, never by name.
+- **Answered steps are skipped on the next application, and the CV carries over.** The review screen
+  names the attached file; route through Dokumente → Ändern to swap in the role's tailored CV, or
+  the previous role's CV goes out under the new application.
+- Success is "Deine Bewerbung wurde erfolgreich abgeschickt!" — or "Deine Bewerbung sieht schon gut
+  aus!" plus a forwards-in-N-hours note when the optional strengths quiz is skipped; it forwards
+  regardless. The durable proof is the account's applications page listing "Beworben am <date>".
+
+**compleet job boards → persy.jobs**
+
+- `<compleet-cookie-banner>` is a shadow-DOM custom element that intercepts pointer events
+  page-wide, so the apply click times out with nothing visibly in the way — and a force-click
+  changes nothing. Dismiss it by evaluating into its `shadowRoot` (button "AUSWAHL SPEICHERN") in a
+  retry loop that verifies the element is gone. "Direkt bewerben" then opens the real form as a
+  popup onto a persy.jobs session URL.
+- persy's styled radios and checkboxes are invisible to `check()` and label clicks; set them via
+  evaluate — click, force `checked`, dispatch `change`. The phone number is three separate inputs
+  (country / area / local).
+- **The first file input is an inert template.** `upload[med_file_path][]` accepts a file and does
+  nothing with it. The live uploader is `input[name^="afu-file"]`, and it re-arms after every
+  upload — upload files one at a time, and set each new row's "Anlage Typ" select (Lebenslauf /
+  Zeugnis) as the row appears.
+- **Submission is two dialogs deep.** The submit click first surfaces persy's own cookie dialog,
+  then a final confirm with a "Ja, absenden" button. Until that second button is clicked nothing has
+  been sent — a driver that stops at the submit click reports success on an unsent form.
+
+**Cornerstone (csod.com)**
+
+- Requisitions on a `careersite` tenant take applications **without an account**:
+  `/ux/ats/careersite/1/requisition/<id>/application?c=<tenant>&jobboardid=0#1`.
+- Inputs carry no usable names — map them by aria-label and nearest label text, fill by index.
+- The CV upload announces an on-screen AI scan of the document; give it several seconds to finish,
+  then re-verify every field already filled (same reflex as Lever's back-fill).
+- Consent and source checkboxes are styled — evaluate-click them. The "how did you find us" options
+  take the honest answer (e.g. "Agentur für Arbeit" for a BA-sourced role).
+- Success is the wizard's step 2 replacing the form with "Vielen Dank für deine Bewerbung!".
+
+**finest-jobs.com**
+
+- **Upload success never appears in body text.** Files land in proxy inputs `input[id^=upload_]`
+  whose `.value` holds the stored filename — verify those, and abort before submit if the CV proxy
+  is empty.
+- There is no `button[type=submit]` anywhere; the submit control is an `<a>` reading "Bewerbung
+  absenden".
+- **A field can be client-enforced required while its HTML says `required=false`** — the submit then
+  fails silently, with no navigation. Screenshot after every submit click; the red validation
+  message and asterisk exist only on screen. A required bare salary number found this way is a wall:
+  park it, never invent the number.
+
 **Everything else**
 
 - **A file upload needs an open file chooser.** Click the attach button first; a hidden
@@ -91,6 +220,19 @@ Each of these was paid for once. Read them before driving a form, not after.
   the bundle beats an hour of guessing at an error code.
 - **Some job boards serve a bot interstitial on first contact.** *"Verifying your browser before
   proceeding"* on navigation one; navigate again and it passes.
+- **A bot interstitial that stops passing has flagged your session, not your address.** After a burst
+  of automated hits, AllJobs' Radware page went from auto-passing to an endless spinner — in
+  headless and headed alike — for as long as the saved cookies were presented. A fresh context from
+  the same machine passed in seconds. Don't fight the spinner with browser flags: discard the stored
+  state and re-authenticate. On an OTP site the login session is cheap; anything already uploaded to
+  the account is still there. (An interstitial that blocks even a fresh context is wall 3 —
+  diagnose from the person's own network before recording it.)
+- **An upload limit ("Die Datei ist zu groß") on a box with no gs/qpdf** still has a recompression
+  path: `pdftoppm -jpeg -r 100 -jpegopt quality=72` the PDF into per-page JPEGs, wrap them in an
+  HTML shell (`@page { size: A4; margin: 0 }`, one full-page `<img>` per page,
+  `page-break-after: always`), and print that to PDF with headless Chromium — a 3.7 MB certificate
+  scan came out at 1.5 MB across 13 pages. Verify legibility on a rendered page before sending.
+  **Scans only, never the CV** — rasterising the CV destroys the text layer ATS parsing depends on.
 - **Every form runs invisible reCAPTCHA.** An automated fill can be scored down silently. **No
   submission counts until a confirmation page is on screen** — for Greenhouse, a URL ending
   `/confirmation` titled "Thank you for applying"; for a monday.com form, the form replacing itself

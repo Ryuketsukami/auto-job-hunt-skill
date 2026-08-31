@@ -22,6 +22,10 @@ CONVENTIONAL_SECTIONS = {
     "projects", "selected projects", "personal projects",
     "education", "certifications", "licenses", "licences",
     "languages", "publications", "awards", "volunteering", "references",
+    # German-market CVs use German labels; German ATS parsers recognise these.
+    "profil", "kenntnisse", "berufserfahrung", "praktische erfahrung",
+    "praktika", "projekte", "ausbildung", "bildungsweg", "zertifikate",
+    "weiterbildung", "sprachen",
 }
 
 # Phrases that only ever appear when an agent leaked into the document.
