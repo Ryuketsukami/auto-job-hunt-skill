@@ -98,6 +98,15 @@ Each of these was paid for once. Read them before driving a form, not after.
 - **Refuses driven submissions outright.** A valid, fully-filled form returns *"session verification
   failed due to a human check error"*. That is reCAPTCHA scoring the browser, not a bad field.
   Refilling changes nothing. **Do not attempt a third variation.**
+- **The human-check error UI carries its own way out**: an *"email your resume"* mailto link to
+  `<Company>.<positionUid>@applynow.io` — Comeet's inbound-application intake for that exact
+  position. Emailing the CV there from the person's mailbox is applying through the employer's
+  designated channel, not circumvention. Confirmed on two separate Comeet employers; grab the
+  mailto from the error frame's link dump before closing the page.
+- Radio options are **custom-styled and digit-led**: ids like `1713…` are invalid in CSS `#id`
+  selectors, and the real `<input>` fails Playwright's actionability check. Click the visible
+  `label:has-text(...)` and verify `checked` via JS. Submit buttons omit `type="submit"` yet
+  default to it — match on `button:has-text('Submit Application')`, not `button[type=submit]`.
 
 **Lever**
 
