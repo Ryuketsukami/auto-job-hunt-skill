@@ -197,8 +197,18 @@ Each of these was paid for once. Read them before driving a form, not after.
 - **Employer screening questions load async, after the apply modal.** The "המעסיק ביקש" block can
   take tens of seconds to appear — poll ~30s for it before concluding the job has no questions, or
   the application goes out with them unanswered.
+- **The question options are not form controls.** No `input[type=radio]` exists anywhere on the
+  page — each option is a styled `div.P4.Hand` row carrying
+  `ng-click="AnswersHandelr(Question.ID,Answers.ID)"`, holding a circle `div.job-sendcv-qsrd` and a
+  label div whose exact text is `כן`/`לא`. Click the option row (a click on the exact-text label
+  leaf bubbles up to the handler) and verify by DOM state change — the row's `outerHTML` grows and
+  a `checked/selected`-class appears on the circle. A radio-based answerer finds nothing and
+  aborts.
 - The success dialog's wording varies by flow — match `הועברו בהצלחה|נשלחו בהצלחה|נשלחה בהצלחה`,
-  not a single fixed phrase.
+  not a single fixed phrase. One more variant: **"קורות החיים שלך נשלחים ברגעים אלו למעסיק"** with a
+  `בטל שליחה` (cancel-send) link and the sender's details — that *is* the sent confirmation, shown
+  while the send is briefly cancellable; the modal then closes on its own, so a poll that only
+  matches the נשלחו-family phrases reports failure on a send that succeeded.
 - **Two auth iframes coexist**, both with `id="LoginRegisterIframe"` — a page-level login widget
   and the apply popup's own. First-match-by-URL finds the wrong one; a `fill()` on the covered
   background widget even *succeeds* (fill bypasses hit-testing) while the click is intercepted.
