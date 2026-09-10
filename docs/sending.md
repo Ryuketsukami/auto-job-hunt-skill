@@ -194,6 +194,12 @@ Each of these was paid for once. Read them before driving a form, not after.
   in **hours**, not minutes. So probing costs sends: consolidate the day's AllJobs work into **one
   scripted pass** (upload, questions, apply, verification in a single run), never an iterate-and-retry
   loop of page loads.
+- **Once a session has been flagged that day, a clean probe proves nothing about the next load.**
+  Twice, ~3 h apart on the same logged-in state: a single probe rendered the full page, and the send
+  navigation ~90 s later drew the interstitial — the challenge interposed on the *second* consecutive
+  load both times, while lone spaced loads kept passing. On a flagged day the budget is **one** load,
+  and a probe spends it. Skip the probe entirely: make the first navigation the send itself, with the
+  interstitial/challenge/already-sent guards inline so a walled load still aborts safely with proof.
 - **Employer screening questions load async, after the apply modal.** The "המעסיק ביקש" block can
   take tens of seconds to appear — poll ~30s for it before concluding the job has no questions, or
   the application goes out with them unanswered.
