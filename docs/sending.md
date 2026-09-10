@@ -20,10 +20,15 @@ Recon each posting before touching a form. The patterns that recur:
 - **A domain that does not resolve**, whose posting ends by telling applicants to email a named
   person. That instruction *is* the official path. Use it.
 - **No form at all** — some companies only ask for a CV and a short note, by email.
+- **A published email hidden behind Cloudflare's scrape-shield** renders as `[email protected]` with
+  the real address in a `data-cfemail` hex attribute. Decode it: XOR each byte with the first byte
+  of the hex string. The address is public to every human reader — decoding it is reading the page,
+  not harvesting.
 - **Comeet** boards: the standalone apply form is
   `comeet.co/jobs/<companyUid>/<positionUid>/apply?token=<token>`, and all three identifiers come out
-  of a JS blob in the careers page HTML. The form cannot be submitted by a driven browser, but each
-  position publishes an email address that reaches the same pipeline.
+  of a JS blob in the careers page HTML. A driven submission may pass or be refused by its
+  reCAPTCHA scoring (see Form mechanics) — attempt the form first; each position also publishes an
+  email address that reaches the same pipeline.
 - **An aggregator's "apply" link that chains through an ad tracker** (gute-jobs.de → jobspreader.com)
   can dead-end in an interstitial carrying a hidden reCAPTCHA. That chain is advertising plumbing,
   not the official path. Search the employer's own careers site for the same requisition — it is
@@ -60,6 +65,8 @@ Each of these was paid for once. Read them before driving a form, not after.
   inbox, fill `#security-input-0` through `#security-input-7`, submit again. A jump to ~13 console
   errors is the normal signature of that gate, not a failure. A stale code is cheap — clicking Submit
   again mails a fresh one.
+- On the wire the gate announces itself as **HTTP 428** on the submit POST. 428 is the code gate
+  arming, not an error — do not retry the POST as if it failed; go read the mailbox.
 - **The code is mixed-case** (e.g. shaped like `XSzk9gAI`), so an `[A-Z0-9]{8}` extractor silently
   misses it, and the mail wraps it in prose — anchor on the phrase instead:
   `/security code field[\s\S]{0,120}?\b([A-Za-z0-9]{8})\b/i`, with a standalone-line
@@ -90,14 +97,28 @@ Each of these was paid for once. Read them before driving a form, not after.
 
 **Comeet**
 
+- **The apply form's iframe lazy-loads**, on some embeds only after interaction. A fixed wait finds
+  no frame at all. Poll for it (15 × 2s worked) and, between attempts, scroll the page and click the
+  apply trigger again — the frame appears only once its loader has been provoked.
+- **Hidden Angular inputs fail Playwright's actionability check** even when their control is plainly
+  on screen. JS-click the `label[for=<id>]` instead, then verify the input's `checked`/`value` via
+  JS — the label is the visible control; the input never becomes clickable.
 - Accepts `.pdf`, `.doc`, `.docx`, `.rtf` **only** — no `.txt`, no paste-text fallback.
 - Angular dropdowns can have the **question itself as the element id**, e.g.
   `id="How did you hear about us?"`.
-- The resume input is `opacity: 0`, so a driven click fails as "not visible". Click
-  `label.clickableLink[for='cv']` instead.
-- **Refuses driven submissions outright.** A valid, fully-filled form returns *"session verification
-  failed due to a human check error"*. That is reCAPTCHA scoring the browser, not a bad field.
-  Refilling changes nothing. **Do not attempt a third variation.**
+- The resume input is `opacity: 0`, so a driven click fails as "not visible". Playwright's
+  `set_input_files` on the hidden `#cv` input works directly; clicking
+  `label.clickableLink[for='cv']` is the fallback.
+- The **phone-country selector is a button + search combobox and its default can be wrong**
+  (a fresh en-US context got "Germany +49"). Click the button, type the country into the
+  revealed `input[placeholder='Search']`, click the option, then verify the button shows the
+  right prefix before filling the number.
+- **May refuse a driven submission — or accept it.** The invisible reCAPTCHA scores each
+  submission: the same rig on the same day was refused on one employer's embed and got a clean
+  on-page *"Thank you <name>!"* confirmation on another's first submit. Always attempt the form.
+  When it refuses, a valid, fully-filled form returns *"session verification failed due to a human
+  check error"* — that is the score, not a bad field. Refilling changes nothing. **Do not attempt
+  a third variation.**
 - **The human-check error UI carries its own way out**: an *"email your resume"* mailto link to
   `<Company>.<positionUid>@applynow.io` — Comeet's inbound-application intake for that exact
   position. Emailing the CV there from the person's mailbox is applying through the employer's
@@ -107,6 +128,29 @@ Each of these was paid for once. Read them before driving a form, not after.
   selectors, and the real `<input>` fails Playwright's actionability check. Click the visible
   `label:has-text(...)` and verify `checked` via JS. Submit buttons omit `type="submit"` yet
   default to it — match on `button:has-text('Submit Application')`, not `button[type=submit]`.
+
+**AllJobs (alljobs.co.il)**
+
+- Job-detail pages bot-wall a guest headless browser but render fully under the person's own
+  logged-in session (`storage_state`).
+- The plain "הגשת מועמדות" anchor is a one-click `SendCV(jobId)` that sends a **stored** CV
+  immediately. The adjacent gear "עדכון קורות החיים לפני שליחה" (`ShowSendCVWithEdit(jobId)`)
+  opens a modal with a stored-CV selector, an "הוספת קובץ חדש" mode whose **visible**
+  `#txtFileNew` input takes a per-application upload (stored CVs untouched), an optional
+  1000-char cover-note textarea (`ShowPreeLetter()`), and its own submit
+  (`SubmitForm(JobWithMailForm)`). Success is an on-page dialog: *"קורות החיים הועברו
+  בהצלחה!"*.
+- Two elements share `ng-click="DisplayCVArea()"` (the mode toggle in each direction), so
+  reading the toggle's text via `.first` can grab the hidden twin. Verify the mode by the
+  visibility of `#txtFileNew` and the file set on it — never by toggle text.
+- A hidden `#inp_UploadCvFile` (a separate "VipBox" component) sits in the page source;
+  `set_input_files` on it silently goes nowhere. Target `#txtFileNew` inside the modal.
+- **Some listings are VIP-paywalled**: the job's own apply and update-CV controls render as
+  plain links to `User/Register/CreditCard.aspx?JobID=<id>` (the paid-package purchase page)
+  and no `SendCV(<id>)` handler exists for that id — while other jobs on the same page keep
+  normal handlers, proving the account itself is fine. That is a seen wall: log `blocked`.
+  Buying the package is the person's decision; payment fields are never entered. If the
+  person declines the purchase, retag the row `deferred` (see The park pattern).
 
 **Lever**
 
@@ -145,6 +189,16 @@ Each of these was paid for once. Read them before driving a form, not after.
 - **Each OTP round costs the person a code on their phone or in their inbox.** Batch everything
   into one authenticated session, and tell the person codes are coming — a flood of unexplained
   OTPs reads as fraud to the account's owner.
+- **The bot interstitial re-arms after ~7 rapid page loads even on a valid logged-in session** — a
+  94-character "Verifying your browser" body carrying an Incident ID — and the cooldown is measured
+  in **hours**, not minutes. So probing costs sends: consolidate the day's AllJobs work into **one
+  scripted pass** (upload, questions, apply, verification in a single run), never an iterate-and-retry
+  loop of page loads.
+- **Employer screening questions load async, after the apply modal.** The "המעסיק ביקש" block can
+  take tens of seconds to appear — poll ~30s for it before concluding the job has no questions, or
+  the application goes out with them unanswered.
+- The success dialog's wording varies by flow — match `הועברו בהצלחה|נשלחו בהצלחה|נשלחה בהצלחה`,
+  not a single fixed phrase.
 - **Two auth iframes coexist**, both with `id="LoginRegisterIframe"` — a page-level login widget
   and the apply popup's own. First-match-by-URL finds the wrong one; a `fill()` on the covered
   background widget even *succeeds* (fill bypasses hit-testing) while the click is intercepted.
@@ -217,6 +271,87 @@ Each of these was paid for once. Read them before driving a form, not after.
   message and asterisk exist only on screen. A required bare salary number found this way is a wall:
   park it, never invent the number.
 
+**Drushim (drushim.co.il)**
+
+- Job URLs are strictly `/job/<numeric-id>/<8-hex>/` — every other shape 404s. The posting (title,
+  description, requirements, a JSON-LD JobPosting block) is **server-rendered in the raw HTML** even
+  though `__NEXT_DATA__` is near-empty — fetch raw before concluding the SPA hides it. The apply
+  button ("הגשה") is the opposite: client-hydrated, zero apply markup in static HTML, so applying
+  needs a real browser.
+- Applying needs an account. The registration modal's fields carry no usable ids — key them **by
+  placeholder** (שם פרטי / שם משפחה / מייל / סיסמה / טלפון). The one required checkbox bundles terms
+  and marketing together — there is no separate marketing consent to decline. The city field (ישוב)
+  presents as required but the button enables without it.
+- A signup 400 *"כתובת האימייל כבר רשומה במערכת"* means the person already has an account —
+  **check before assuming they don't** (same lesson as AllJobs). "לכניסה מהירה" is a password login,
+  not passwordless. Recovery runs through their mailbox: שכחתי סיסמה → `#reset-request-email` →
+  "איפוס" → a mail from `alerts@drushim.co.il` with a `ResetPassword.aspx?token=` link → a single
+  `#newPassword` field and "יצירת סיסמה". **Passwords are 8+ characters, letters and digits only** —
+  a symbol is refused. A reset kills their old password: tell them, and write the new one straight
+  into `.env`.
+- The logged-in apply modal (`div.ReactModalPortal`) lists the account's stored CVs as radios, each
+  row dated ("נוסף בתאריך"); an `input[type='file']` inside the modal takes a per-application upload
+  and auto-selects it. **Same-named files accumulate** — verify the *checked* radio's row carries
+  today's upload timestamp, not just the right filename. Stored CVs are the person's own uploads;
+  never touch them.
+- **Scope the final submit to the modal**: `div.ReactModalPortal button:has-text('הגשה')`. The
+  page's own הגשה sits behind the overlay, a generic selector matches it first, and the click times
+  out as "intercepts pointer events".
+- Proof is threefold: POST 200 to `api/cv/sendsinglecv/?JobCode=<id>`, the on-screen
+  *"עבודה טובה! הגשת מועמדות למשרה"*, and the job card flipping to "הגשת ✓".
+
+**Workday (myworkdayjobs.com)**
+
+- The unauthenticated liveness check is the CXS API — the posting's `/job/<slug>` URL fetched via
+  `/wday/cxs/<tenant>/<site>/job/<slug>` answers `jobPostingInfo` JSON.
+- Everything is addressed by `data-automation-id`. The apply path: `/apply` →
+  `a[data-automation-id='applyManually']` → `createAccountLink` →
+  `input[data-automation-id='email'/'password'/'verifyPassword']`.
+- **The create-account button is covered by an overlay `div[data-automation-id='click_filter']`**
+  carrying the action's aria-label. The button beneath never receives a pointer event — click the
+  overlay div, not the button.
+- **The `beecatcher` input is a honeypot.** Leave it blank (rule 5).
+- No email verification: account creation drops straight into the six-step wizard (My Information →
+  My Experience → App Questions → Voluntary Disclosures → Review). Persist `storage_state` — wizard
+  progress lives on the account and survives a new browser.
+- Step-1 defaults follow the tenant's home country, not the job's (an Israel role opened on country
+  Germany, phone prefix +49) — fix both. The step can hard-require Street / Postal Code / City;
+  a profile that holds only a region cannot fill those. That is an ask-the-person, never an
+  invention.
+
+**Niloosoft Hunter minisites (minisite.niloos.ai)**
+
+- Vacancy and apply pages live at `minisite.niloos.ai/vacancy/<24-hex>` and `/apply/<24-hex>`.
+  Fields are keyed by placeholder; the CV upload input is `#cvFile`.
+- reCAPTCHA v2 is enforced server-side and **the checkbox materializes on the submit click** — a
+  widget absent through the whole fill is not absence of a wall. When it appears it is wall 1:
+  park, one click short.
+
+**HubSpot-embedded careers forms**
+
+- A careers page (seen on Webflow) can carry its whole apply form as a HubSpot embed. The page
+  source holds the config — `hbspt.forms.create({portalId, formId})`, loaded from
+  `js-<region>.hsforms.net/forms/embed/v2.js` — but the form renders into an **iframe**: find the
+  frame containing `input[name='firstname']`.
+- Field names are HubSpot-standard: `firstname`, `lastname`, `email`, custom slugs like
+  `which_position_are_you_applying_for_`, `resume` (file), `cover_letter` (textarea). Consent
+  splits cleanly: `LEGAL_CONSENT.processing` is the required one;
+  `LEGAL_CONSENT.subscription_type_<id>` is marketing — leave it unchecked. Submit is
+  `input[type='submit']`.
+- The form carries `g-recaptcha-response`, and a driven submission can surface a **visible
+  reCAPTCHA image challenge on submit**. Wall 1 — park or defer, never a third attempt.
+
+**Image-button careers modals**
+
+- One hand-rolled Angular careers page (baba-entertainment.com) taught a general trap. Its
+  mechanics: positions feed is a public S3 JSON (`.../careers/careers.json`), items `.career-item`,
+  apply trigger `img[alt='apply-now']`, modal `app-apply-job-modal`, resume POSTed base64 in the
+  body — one file, under 750 KB — success dialog *"Form successfully submitted!"*.
+- **The trap: image buttons sharing a class.** `.btn-actions` matched BOTH the close X
+  (`.close-btn.btn-actions`) and the submit graphic — a class-based click closes the modal and the
+  driver reports success on an unsent form. The real submit was `img[alt='send']` inside
+  `.send-btn`. **Match image buttons by their `alt`, never by a shared class.**
+
 **Everything else**
 
 - **A file upload needs an open file chooser.** Click the attach button first; a hidden
@@ -279,13 +414,19 @@ JavaScript demands.
 asked precisely because it wants a person. This is rule 4 in [SKILL.md](../SKILL.md) — a line, not a
 capability gap.
 
-Two things worth knowing:
+Three things worth knowing:
 
+- **Know the badge from the challenge.** Invisible reCAPTCHA plants an `api2/anchor` iframe on the
+  page — that is the corner badge, present on countless forms that will never challenge anyone. The
+  challenge is the `api2/bframe` iframe (or a Turnstile / hCaptcha frame) **when it is visible**. A
+  guard that treats the anchor as a wall defers half the internet; watch for a visible bframe
+  instead.
 - **It can fail silently.** A filled, valid form that returns an error is being scored, not misfilled.
   **Two attempts, then stop.** Never a third variation.
 - **It can escalate on the submit click.** A widget that sat dormant through the whole fill can turn
-  into an image puzzle at the end. The answer is not a stealth plugin or a patched
-  `navigator.webdriver`. It is the park pattern below.
+  into an image puzzle at the end — or a checkbox can materialize where none existed. That
+  materialized widget **is** a seen wall, as real as one that was there from the start. The answer
+  is not a stealth plugin or a patched `navigator.webdriver`. It is the park pattern below.
 
 ### 2. A mandatory account — reroute, or open it
 
@@ -319,6 +460,25 @@ If it fails from there too — a DataDome challenge body, `geo.captcha-delivery.
 and disable any ad blocker"* — the block is aimed at the automation fingerprint itself. No profile,
 address, or header changes it. That is wall 1, and the remedy is their own everyday browser.
 
+**A page that loads fine can still 403 its own form's API.** Cloudflare's silent JS-detection
+(`cdn-cgi/challenge-platform/.../jsd/oneshot` firing on page load) scores the browser, then the WAF
+403s only the POST — on WordPress, the Contact Form 7 REST endpoint
+(`/wp-json/contact-form-7/v1/.../feedback`). The symptom is a form stuck at `data-status="submitting"`
+with an empty `.wpcf7-response-output`; only network logging shows the 403. Confirmed at
+laufer.group 2026-09-08 (two attempts; hiding `navigator.webdriver` changed nothing). Two useful
+facts: a stalled multipart POST never ran the server-side handler, so nothing half-landed and a
+retry is safe; and **check the same page for a published application mailto** — a careers page that
+walls its form but prints its recruiting address has handed you the reroute. A short first-person
+mail naming the role ID, CV attached, sent from the person's own mailbox, is the employer's own
+channel and needs no park.
+
+The same signature on a **job-board middleman** has a cleaner exit. A WP Job Manager board's own
+apply form (jobs.secrettelaviv.com, 2026-09-08) 403'd its `admin-ajax.php` upload endpoint behind
+Cloudflare while the page rendered fine — on screen just *"HTTP Error."* and a submit stuck on
+*"Cannot proceed. Some files are still uploading"*. The board is not the employer: find the
+employer's own channel and apply there. A middleman's walled form blocks the middleman, not the
+application.
+
 ---
 
 ## The park pattern
@@ -345,7 +505,10 @@ Rules for a park:
 - Say exactly what is left to do, in one line. "Open, review, click Submit" is a complete handover.
 
 A parked role is logged with the specific blocker named and the CV ready to send. **A blocked role is
-never quietly recorded as sent.**
+never quietly recorded as sent.** And when the wall turns out to be permanent — the person declines a
+paid gate, or no channel exists that can ever pass — the row is retagged `deferred`: out of the active
+queue, distinct from `no`/`dropped` (the fit was right; the channel was not), revivable if the wall
+ever falls.
 
 ---
 

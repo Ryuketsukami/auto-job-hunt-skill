@@ -95,6 +95,26 @@ Known dead ends, so you do not spend an hour rediscovering them:
 - **LinkedIn public job-view pages answer 999/404 to fetchers.** Requirements for an alert-sourced
   role must come from §2 or §4; if neither yields them, the role is not presentable — name it to the
   person as an unverified lead instead of presenting it half-known.
+- **Drushim (drushim.co.il)**: job URLs are strictly `/job/<numeric-id>/<8-hex>/` — other shapes
+  404. The raw HTML carries a JSON-LD JobPosting block *and* the server-rendered requirements, even
+  though `__NEXT_DATA__` is near-empty — a plain fetch reads the whole posting; no browser needed
+  until apply time (see sending.md).
+- **WP Job Manager boards** (nbn.org.il and kin): listings answer a
+  `POST /jobboard/jm-ajax/get_listings/` with rendered HTML. The board's own region filter can
+  silently not apply — the parameter set, the results unfiltered — so filter the dump yourself
+  rather than trusting the query.
+- **Paradox boards** (careers.marriott.com style): `POST /api/get-jobs` with a `keyword` field; the
+  country filter takes the country *name* ("Israel"), not an ISO code.
+- **jobs.secrettelaviv.com**: index at the root `/` (`/jobs/` 404s); 403 to plain fetchers,
+  loads under Playwright; rapid successive fetches re-arm a Cloudflare interstitial — fresh
+  context and ~9s waits pass. Postings carry a structured "Level of Hebrew" field, a screening
+  signal most boards lack. Its own apply form is walled (sending.md, Walls §3) — apply through the
+  employer's channel.
+- **telfed.org.il**: 403 to plain fetchers everywhere, loads under Playwright. The index is
+  `www.telfed.org.il/job-board/` — both `/jobs/` index forms 404 while individual postings live at
+  `/jobs/<slug>/`.
+- **janglo.net**: plain fetch works; items at `janglo.net/item/<ID>`. Contact emails are
+  scrape-shielded (`data-cfemail` — decode in sending.md, Finding the real apply path).
 
 ---
 
