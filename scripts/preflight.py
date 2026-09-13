@@ -45,6 +45,25 @@ FINGERPRINTS = [
     r"\b(?:TODO|TBD|FIXME)\b",
 ]
 
+# Assistant-flavoured stock phrasing. Reads as generated; costs credibility on contact.
+SLOP_HARD = [
+    r"\bI hope this (?:email |message |letter )?finds you well\b",
+    r"\bit'?s not just [^.,;]{1,40}, it'?s\b",
+    r"\bin today'?s fast-paced\b",
+    r"\bgame[- ]chang(?:er|ing)\b",
+    r"\bsynerg(?:y|ies|istic)\b",
+]
+SLOP_SOFT = [
+    r"\bdelve\b", r"\bseamless(?:ly)?\b", r"\bcutting[- ]edge\b",
+    r"\bleverag(?:e|ing|ed)\b", r"\bresults[- ]driven\b",
+    r"\bproven track record\b", r"\bteam player\b", r"\bfast learner\b",
+    r"\bthink(?:ing)? outside the box\b", r"\bgo-getter\b", r"\bdetail[- ]oriented\b",
+]
+
+# The em dash is the loudest machine-writing tell there is; a spaced en dash is the
+# same tell in disguise. A plain hyphen (or an en dash tight between digits) is fine.
+BAD_DASH = r"[—―]|(?<=\s)–|–(?=\s)"
+
 # Markers that announce something was left out or presented generously.
 DISCLOSURE = [
     r"\((?:omitted|redacted|withheld|stretched|approx\.?|see note|not shown|n/a)\)",
@@ -195,6 +214,20 @@ def check_file(path: Path, banned: list[str], names: list[str], is_letter: bool)
             if m:
                 add("ERROR", i, "an agent fingerprint", m, ln)
 
+        m = re.search(BAD_DASH, ln)
+        if m:
+            add("ERROR", i, "an em dash (or a spaced en dash standing in for one): use a comma, colon, period, or plain hyphen", m, ln)
+
+        for pat in SLOP_HARD:
+            m = re.search(pat, ln, re.I)
+            if m:
+                add("ERROR", i, "assistant-flavoured stock phrasing", m, ln)
+
+        for pat in SLOP_SOFT:
+            m = re.search(pat, ln, re.I)
+            if m:
+                add("WARN", i, "reads like generated filler: replace with a concrete fact", m, ln)
+
         for pat in DISCLOSURE:
             m = re.search(pat, ln, re.I)
             if m:
@@ -261,10 +294,10 @@ def main(argv: list[str]) -> int:
 
     checked = ", ".join(p.name for p in targets)
     if errors:
-        print(f"\npreflight FAILED — {len(errors)} error(s), {len(warns)} warning(s) in {checked}")
+        print(f"\npreflight FAILED - {len(errors)} error(s), {len(warns)} warning(s) in {checked}")
         return 1
 
-    print(f"preflight OK — {checked}"
+    print(f"preflight OK - {checked}"
           + (f" ({len(warns)} warning(s))" if warns else "")
           + (f" · {len(banned)} banned term(s) checked" if banned else ""))
     return 0

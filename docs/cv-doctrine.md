@@ -140,6 +140,13 @@ These are rule 2 in `SKILL.md`, restated where they get broken.
   document properties naming a generator.
 - **The person is the sender.** Emails, form answers, and cover letters are written as them, in first
   person, and never say "on behalf of".
+- **No em dashes, ever.** The em dash is the loudest machine-writing tell in circulation, and a
+  spaced en dash is the same tell in disguise. Use a comma, a colon, a period, or a plain hyphen.
+  This covers every outward artifact: CVs, letters, form answers, emails.
+- **No assistant-flavoured prose.** Stock phrasing that reads as generated costs credibility on
+  contact: "I hope this finds you well", "it's not just X, it's Y", "in today's fast-paced world",
+  "seamlessly", "cutting-edge", "game-changer", hollow superlatives, tidy symmetrical triads.
+  Write the way a busy, competent person types: plain words, concrete facts, no flourish.
 
 `scripts/preflight.py` enforces all of this. Run it before every render.
 
