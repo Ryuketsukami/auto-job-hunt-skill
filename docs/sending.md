@@ -403,6 +403,34 @@ inside its per-role directory. A file called `..._CV_Acme.pdf` tells Acme it is 
 
 ---
 
+## German ATS portals: quirks that each cost an hour
+
+- **rexx (`karriere.<firma>.de`).** Click the consent dialog's visible CTA ("Ja, ich bin
+  einverstanden") before anything else: a JS click on the hidden `#cookie-submit-input` sets no
+  session, and the final POST then dies with "Leider konnten wir Ihre Anfrage nicht bearbeiten"
+  while every field shows green. Styled selects fill fine via JS value + change events. The real
+  submit is often labeled just "Senden", and the top of the form carries decoy links ("Mit
+  <portal>-Profil bewerben (optional)") that a loose /bewerben/ matcher clicks first. rexx forms
+  carry a `website` text input no human can see: a honeypot, leave it empty.
+- **concludis (`<firma>.concludis.de`).** Single-page form, no account. Every uploaded file must
+  be typed via its row's "Dokument-Typ wählen" select (the CV as "Lebenslauf", or the
+  required-Lebenslauf validation blocks silently). Custom radios reject Playwright's check() and
+  need JS clicks. Watch the salary field: `KarGehalt` is a bare-number input that can be enforced
+  at submit even when the DOM says `required=false`; the red mark only appears after the click.
+  No number from the person means blocked, like any forced salary field.
+- **finest-jobs.com.** The Lebenslauf upload widget can fail server-side forever in a clean
+  headless context: the chip renders, the proxy field fills, and the validation keeps demanding
+  the CV, while the Sonstige-Dokumente slot processes normally. The escape hatch that has now
+  worked twice: the same role usually exists on the employer's own career portal, one
+  site-search away.
+- **HeyJobs funnels reuse the account's stored documents silently.** A funnel can declare
+  "Unterlagen vollständig" without ever offering an upload step: whatever Lebenslauf the profile
+  holds is what forwards to the employer (~11h later). Set the profile CV at
+  `/de-de/profile/documents` BEFORE walking a funnel, and mind that page's bare file inputs: the
+  first belongs to the Zeugnisse section, not the Lebenslauf.
+
+---
+
 ## Email sends
 
 `scripts/mailbox.py` sends from the person's own address. Two things it learned the hard way:

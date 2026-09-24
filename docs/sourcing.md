@@ -115,6 +115,15 @@ Known dead ends, so you do not spend an hour rediscovering them:
   `/jobs/<slug>/`.
 - **janglo.net**: plain fetch works; items at `janglo.net/item/<ID>`. Contact emails are
   scrape-shielded (`data-cfemail` — decode in sending.md, Finding the real apply path).
+- **arbeitsagentur.de (Germany)**: full JSON API, no account. Search:
+  `rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v6/jobs?was=<query>&wo=<city>&umkreis=25&size=100`
+  with header `X-API-Key: jobboerse-jobsuche`; detail per listing at
+  `/pc/v4/jobdetails/<base64(referenznummer)>`. The detail JSON names the real apply channel:
+  emails inside `stellenangebotsBeschreibung`, an `externeURL`, or an Allianzpartner. Dedupe on
+  `referenznummer` against the ledger, and never trust listing freshness: BA rows routinely
+  outlive the vacancy (a 2023 posting still listed in 2026; an aggregator target already
+  withdrawn while its BA row looked live). Twin listings of one role appear under different
+  boards' referenznummern; dedupe by employer + role before applying.
 
 ---
 
