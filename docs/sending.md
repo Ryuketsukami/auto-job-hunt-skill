@@ -475,9 +475,17 @@ Three things worth knowing:
 Board-level walls seen live, so the hour is not spent twice:
 
 - **Drushim (drushim.co.il) fronts its job pages with a yad2-branded hCaptcha interstitial**
-  ("Are you for real?") the moment an automated browser loads one, before any apply click. Postings
-  still read fine over plain HTTP (see sourcing.md); the *apply* flow behind them is unreachable to
-  automation. A Drushim-sourced role needs the employer's own channel, or it is a park.
+  ("Are you for real?") when a bare automated browser loads one, before any apply click. Postings
+  still read fine over plain HTTP (see sourcing.md). The apply flow IS drivable with the person's
+  own logged-in account: a storage-state session plus `--disable-blink-features=AutomationControlled`
+  and a cleared `navigator.webdriver` loads the page clean, and the apply modal (stored CVs, radio
+  per file, submit) completes with an on-screen confirmation. Two costs learned live: sessions
+  lapse fast, so re-login with the stored credentials inside the same run when the login modal
+  appears in place of the apply modal; and accounts hold at most 4 stored CVs, so an upload past
+  that silently fails with a limit toast, delete a stored duplicate first. Some postings add
+  mandatory screening questions inside the modal that disable submit until answered; answer only
+  from the person's recorded facts, park otherwise. Without an account session, the hCaptcha
+  stands and the role needs the employer's own channel.
 - **Cloudflare Turnstile in a plain headless browser tends to never complete** - the widget sits at
   an empty bar and the form's "verify you are human" error stands after submit. That standing error
   is the seen wall; two attempts, then park.
