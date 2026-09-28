@@ -472,6 +472,16 @@ Three things worth knowing:
   materialized widget **is** a seen wall, as real as one that was there from the start. The answer
   is not a stealth plugin or a patched `navigator.webdriver`. It is the park pattern below.
 
+Board-level walls seen live, so the hour is not spent twice:
+
+- **Drushim (drushim.co.il) fronts its job pages with a yad2-branded hCaptcha interstitial**
+  ("Are you for real?") the moment an automated browser loads one, before any apply click. Postings
+  still read fine over plain HTTP (see sourcing.md); the *apply* flow behind them is unreachable to
+  automation. A Drushim-sourced role needs the employer's own channel, or it is a park.
+- **Cloudflare Turnstile in a plain headless browser tends to never complete** - the widget sits at
+  an empty bar and the form's "verify you are human" error stands after submit. That standing error
+  is the seen wall; two attempts, then park.
+
 ### 2. A mandatory account — reroute, or open it
 
 Some aggregators hide the apply button behind registration. Two ways through, in order:
