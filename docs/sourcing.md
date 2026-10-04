@@ -194,3 +194,13 @@ Do not source the next batch until the current one is resolved and the person ha
 This is rule 8 in [SKILL.md](../SKILL.md), and it exists because a second batch arriving on top of an
 unresolved first one is how roles get presented twice and how a person loses track of what they said
 yes to.
+
+## Liveness checks on SPA career sites (lesson, 2026-10-04)
+
+An HTTP 200 is not liveness. Single-page career sites (lifeattiktok.com, and any React/Vue careers
+shell) return 200 with the full site chrome for postings that no longer exist; the 404 lives in the
+rendered body, not the status line. A TikTok role passed a curl status check one day and turned out
+to be a body-text 404 the next, after the operator had already picked it.
+
+Rule: before presenting or applying, verify the ROLE TITLE appears in the fetched or rendered body.
+For JS-only sites that means a headless render, not curl. A status-only check is not a check.
