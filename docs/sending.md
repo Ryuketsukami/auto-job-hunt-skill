@@ -620,3 +620,18 @@ click that div, not the button. Sign-in pages carry a labelled robots-only honey
 leave it blank. NVIDIA's tenant silently rejects headless account creation (returns to sign-in
 with no error, login then refused); after three clean attempts treat it as a wall and hand
 account creation to the person.
+
+## Greenhouse job-boards: full form mechanics consolidated (2026-10-05)
+
+- Agreement "checkboxes" (Canonical's plagiarism/privacy confirmations) are single-option
+  COMBOBOXES, not checkboxes; pick their only option ("Yes"/"Acknowledge/Confirm").
+- Every control has a stable id (question_NNNN, school--0, gender, disability_status). Ids can
+  start with digits or end in []; always select with [id="..."], never #id.
+- React-select menus: option-node clicks are flaky; keyboard is reliable (focus control,
+  ArrowDown, read aria-activedescendant, Enter).
+- Demographic blocks vary per board: US EEOC selects (gender/hispanic_ethnicity/veteran_status/
+  disability_status), custom required selects (Sourcegraph 400005xxxx), or radio/checkbox lists;
+  all carry a decline option. Location (City) geocoders: type city, ArrowDown, Enter.
+- The emailed 8-character security code renders as inline boxes (#security-input-0..7) at the
+  bottom of the same page; type into box 0 with delay and click the LAST "Submit application".
+- Validation errors are enumerable via [id*=error], [role=alert]: read them instead of guessing.
