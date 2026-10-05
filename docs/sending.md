@@ -606,3 +606,17 @@ capture that API response with a headless load of their career page and apply by
 `order_email` recruiter, from the person's own address, naming the role. Two Proceed roles that
 sat blocked for a week went out in minutes this way, with Sent-folder message-ids as proof.
 Mechanically: load page headless, hook responses matching /GetOrdersDetails/, save body, grep.
+
+## Amazon.jobs and Workday mechanics (2026-10-05)
+
+Amazon.jobs: old accounts migrate via passport.amazon.jobs (name -> emailed 6-digit code -> new
+password; poll the inbox). The application is a 7-section left-nav form; selects are native,
+radios need label clicks (input.click() does not persist), the whole thing auto-saves per step.
+"Have you previously applied" dates live in the dashboard's Archived tab. Submission proof: the
+thank-you page plus a "Thank you for Applying to Amazon!" receipt email per role.
+
+Workday (nvidia.wd5): real buttons sit under a div[data-automation-id="click_filter"] overlay,
+click that div, not the button. Sign-in pages carry a labelled robots-only honeypot text input;
+leave it blank. NVIDIA's tenant silently rejects headless account creation (returns to sign-in
+with no error, login then refused); after three clean attempts treat it as a wall and hand
+account creation to the person.
