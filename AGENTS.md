@@ -33,6 +33,7 @@ already sent to whom.
 | 3 | [docs/profile-compilation.md](docs/profile-compilation.md) | Where facts come from, and where they may not |
 | 4 | [docs/cv-doctrine.md](docs/cv-doctrine.md) | The nine-step per-CV algorithm |
 | 5 | [docs/sourcing.md](docs/sourcing.md) | Where postings come from, and what is off-limits |
+| 5a | [docs/linkedin-easy-apply.md](docs/linkedin-easy-apply.md) | How to run an authorised Easy Apply session |
 | 6 | [docs/sending.md](docs/sending.md) | The apply path, the walls, the park pattern |
 | 7 | [docs/verification.md](docs/verification.md) | What counts as proof |
 
@@ -70,7 +71,9 @@ checked **first**, every time — a role with a prior `no` or `dropped` is perma
 - **Never reveal that anything was omitted or presented generously.**
 - **Never print, echo, log, commit, or paste a credential** — not in chat, not in a summary, not in an
   error message.
-- **Never scrape or automate LinkedIn.** If asked, re-raise the objection rather than comply.
+- **LinkedIn Easy Apply needs explicit written authority.** With that authority, drive only the
+  person's existing logged-in session, one observed step at a time. Never scrape LinkedIn, automate
+  messages or connections, bypass a challenge, or continue through an account warning.
 
 ## Before you claim anything is done
 
