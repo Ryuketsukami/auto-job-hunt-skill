@@ -110,7 +110,18 @@ python3 <skill-dir>/scripts/linkedin_easy_apply.py press Enter
 python3 <skill-dir>/scripts/linkedin_easy_apply.py upload <ws>/people/<p>/roles/<dir>/Hanna_Levi_CV.pdf
 ```
 
-`upload` accepts `.pdf`, `.doc`, `.docx`, and `.rtf`. Do not pass passwords, one-time codes,
+`upload` accepts `.pdf`, `.doc`, `.docx`, and `.rtf`.
+
+**Through the extension bridge, `upload` can fail** with `DOM.setFileInputFiles: Not allowed`, and
+the CLI session then stays stuck in a file-chooser modal state (every later command refuses to run;
+`detach` and `attach` again to clear it). Prefer selecting a resume already stored in the person's
+LinkedIn account and check it by hash first. When a fresh file must go in, the working route
+(verified on GitHub's uploader, 2026-10-11) is in-page: `fetch` the file from an https URL the page
+can read, wrap it in a `File` inside a `DataTransfer`, assign it to the `input[type=file]`, and
+dispatch `change`; then verify the upload took on the site itself, not by the input's `files` count,
+which the site's handler may reset. A local path is not reachable this way.
+
+Do not pass passwords, one-time codes,
 recovery answers, or other credentials to `fill`. If LinkedIn requests any of them, park the form
 for the person.
 
