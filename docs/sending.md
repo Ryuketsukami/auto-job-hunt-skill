@@ -343,6 +343,42 @@ Each of these was paid for once. Read them before driving a form, not after.
 - No email verification: account creation drops straight into the six-step wizard (My Information →
   My Experience → App Questions → Voluntary Disclosures → Review). Persist `storage_state` — wizard
   progress lives on the account and survives a new browser.
+
+Workday tenant variations (workday.wd5's own careers site, 4 live sends 2026-10-11):
+
+- **Some tenants require email verification**: Create Account bounces back to the Sign In landing
+  with no error, which reads exactly like NVIDIA's silent rejection but is not — a "Verify your
+  candidate account" email with an `/activate/<token>` link lands in the inbox. Click it headlessly
+  (`/login/ok` redirect = verified), then sign in. The NVIDIA wall may have been this all along
+  minus the email.
+- **The wizard draft persists per step, but transient fields reset on every page load**: the phone
+  number clears every time while the rest of My Information survives, and so does the whole source
+  multiselect on a NEW application. On each resume: expect to land on step 1, re-enter the phone,
+  re-pick the source, continue. Fill a step completely in one browser session or lose the partials.
+- **`pg.fill()` does not commit the phone field** — the value shows in the DOM, passes step-1
+  validation, then surfaces as "No Response" on Review and a bare "Page Error" on submit. Real
+  keystrokes (`type` + `Tab` blur) commit it.
+- **Non-Latin countries split Legal Name into local + Latin-script fields with DUPLICATE input
+  ids** (two `name--legalName--lastName`). Selector-based fills hit only the first (the local one).
+  Enumerate `querySelectorAll` and fill positionally; local-script fields are optional, leave blank.
+- **Prompt widgets are two-level**: "How Did You Hear" opens categories (chevron = submenu); click
+  the `[data-automation-id='promptOption']` by its `data-automation-label`, then click the leaf the
+  same way. Verify what got selected via the `selectedItem` pills — a stray click selects whatever
+  leaf is first (an "Instahyre" nearly shipped).
+- **Simple question dropdowns are NOT `activeListContainer`** prompts — after clicking the
+  `Select One` button, options are plain `[role='option']`/`menuItem` nodes anywhere in the DOM.
+  Map buttons to their question text by walking up the DOM; aria-labels say only "Select One".
+- **Playwright clicks time out on menu items and footers** (pointer-intercept overlays everywhere).
+  JS `el.click()` for everything.
+- **Second applications on the same account**: `/apply/useMyLastApplication` prefills experience
+  and the previous CV. Deleting the old attachment is unreliable — the application can go out with
+  two CVs attached. Prefer uploading the role CV and accepting the duplicate, or delete via the
+  attachment row's delete control and verify the count.
+- Extra steps appear per role (e.g. INTERVIEW RECORDING CONSENT, its own wizard step); a generic
+  walker that answers mapped questions, declines demographics, checks consent boxes, and clicks
+  footer-next until Review handles them.
+- Proof: Candidate Home lists the application as Active / "In Review" with a submit date, and a
+  "Thanks for applying for the role of <X>" receipt email arrives per role.
 - Step-1 defaults follow the tenant's home country, not the job's (an Israel role opened on country
   Germany, phone prefix +49) — fix both. The step can hard-require Street / Postal Code / City;
   a profile that holds only a region cannot fill those. That is an ask-the-person, never an
