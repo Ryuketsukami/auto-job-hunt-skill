@@ -19,3 +19,6 @@ __pycache__/
 .DS_Store
 .venv/
 node_modules/
+
+# Local agent session files
+runtime/

@@ -20,17 +20,31 @@ storage, or keep a second login profile.
 
 ## One-time runner setup
 
-The person's Windows runner needs Node.js, `@playwright/cli`, Google Chrome, and the official
-Playwright MCP Bridge extension in the Chrome profile that holds the LinkedIn session.
+The person's Windows runner needs Node.js, `@playwright/cli` **0.1.22 or newer**, Google Chrome, and
+the official Playwright MCP Bridge extension in the Chrome profile that holds the LinkedIn session.
 
 ```powershell
-npm install --global @playwright/cli
+npm install --global @playwright/cli@latest
 ```
 
 Install the Playwright MCP Bridge from the Chrome Web Store. An administrator may instead put its
-published extension id in Chrome's `ExtensionInstallForcelist` policy. Chrome must refresh policy or
-restart once before the extension appears. Do not close a person's active Chrome session merely to
-speed that up.
+published extension id in Chrome's `ExtensionInstallForcelist` policy. Chrome loads a new extension
+only after a full restart. Restart it only with the person's go-ahead: killing Chrome drops their
+open tabs to a "Restore pages?" prompt.
+
+**Version pairing.** Bridge 0.4.0 speaks protocol 2. CLI 0.1.9 speaks protocol 1, and the
+connect page rejects it with "The client uses an unsupported protocol version" while `attach`
+hangs with no error on the controller side. If attach hangs, check the CLI version first.
+
+**Skipping the connect dialog.** On every attach the bridge opens a connect tab that asks the
+person to approve. To make attach unattended, the person opens the bridge's status page, copies
+the token it shows, and stores it as a user environment variable on the runner:
+
+```powershell
+setx PLAYWRIGHT_MCP_EXTENSION_TOKEN "<token from the extension page>"
+```
+
+The token is a credential: never print it, log it, or commit it.
 
 ## Controller
 
@@ -41,6 +55,17 @@ export LINKEDIN_RUNNER='user@runner'
 python3 scripts/linkedin_easy_apply.py doctor
 python3 scripts/linkedin_easy_apply.py attach
 ```
+
+Two traps the controller already handles, so do not hand-roll around them:
+
+- **`attach` must run in the person's desktop session.** The CLI opens the connect page by launching
+  `chrome.exe`. Launched from SSH, that process lives in Windows session 0 and never reaches the
+  Chrome in session 1, so attach hangs forever. The controller registers a one-shot interactive
+  scheduled task, runs the CLI hidden through a WScript launcher, and removes the task afterwards.
+  Every later command talks to the CLI daemon and works fine from SSH.
+- **Never call `npx.cmd`.** It is a batch file, so `cmd.exe` re-parses the arguments and an `&` in a
+  search URL silently ends the command (`'location' is not recognized...`). The controller runs
+  `node` on the CLI entry point instead.
 
 The bridge attaches to the signed-in Chrome profile without copying cookies. Use a dedicated
 session name when more than one application operator is active:
@@ -55,22 +80,57 @@ Navigate only to a LinkedIn URL. The controller rejects other hosts.
 
 ```bash
 python3 scripts/linkedin_easy_apply.py goto 'https://www.linkedin.com/jobs/view/123/'
-python3 scripts/linkedin_easy_apply.py snapshot
+python3 scripts/linkedin_easy_apply.py text        # posting body; it is not in the snapshot
+python3 scripts/linkedin_easy_apply.py snapshot    # element refs, printed inline
 python3 scripts/linkedin_easy_apply.py screenshot 'C:\path\before.png'
 ```
 
-The snapshot returns stable element references such as `e17`. Act on a reference only from the
-latest snapshot:
+The snapshot returns element references such as `e17`. Act on a reference only from the latest
+snapshot:
 
 ```bash
 python3 scripts/linkedin_easy_apply.py click e17
 python3 scripts/linkedin_easy_apply.py fill e24 'verified answer'
+python3 scripts/linkedin_easy_apply.py select e31 'Israel (+972)'
+python3 scripts/linkedin_easy_apply.py uncheck e40
 python3 scripts/linkedin_easy_apply.py upload 'C:\CVs\Person_Name_CV.pdf'
-python3 scripts/linkedin_easy_apply.py snapshot
 ```
 
 Do not pass passwords, one-time codes, recovery answers, or other credentials to `fill`. If LinkedIn
 requests any of them, park the form for the person.
+
+## Easy Apply form mechanics (first live batch, 26 sends)
+
+- **The posting body is not in the accessibility snapshot.** Read it with `text`, archive it, then
+  open the form.
+- **Search URL filters:** `f_AL=true` (Easy Apply only), `geoId` plus `location`, and
+  `f_TPR=r2592000` (past month). Each results page renders about 7 cards until the list is
+  scrolled; scroll the list container before snapshotting.
+- **Forms are one page or two to five pages.** One-page forms show Submit straight away. Multi-page
+  forms step Contact, Resume, Additional Questions, Review. Scope every button search to the
+  dialog: the job carousel behind it has its own "Next" button, and clicking that one does nothing
+  to the form.
+- **"Follow <company>" is pre-ticked on every form.** Untick it. Following a page is a social
+  action nobody authorised.
+- **Saved answers prefill.** LinkedIn reuses earlier answers (years with Python, React, and so on)
+  and pre-selects the last resume used. Check every prefill against `profile.md`; a prefill is not
+  a fact.
+- **Education is pulled from the profile, not from `profile.md`.** It can carry wrong years, a
+  school of "N/A", or an empty entry whose required School field blocks Next. Correct entries to
+  the compiled facts, or use "Delete education" then "Remove from your application?". That removes
+  the entry from this one application only, not from the person's profile.
+- **Knockout questions arrive as typed fields.** Years-of-X take a whole number of at most 20
+  characters; answer from the standing numbers recorded in `profile.md`. Degree yes/no follows the
+  person's recorded rule. Salary and bonus expectations, contractor or invoicing status, work rights
+  in another country, and anything else the file does not hold: discard the draft, log the role as
+  deferred, and ask. Do not guess.
+- **Hash the stored resume before the first send.** The resume radio list shows names and dates
+  only. Fetch the stored file from the page and compare its SHA-256 with the verified build.
+- **Confirmation has two shapes.** Usually a dialog headed "Your application was sent to
+  <Company>!". Sometimes only a "Next best action" dialog appears, while the job page shows
+  "Application status: Application submitted". Either one is proof; a click alone is not.
+- **The job title can contain "Applied"** ("Applied AI Engineer"). Detect an earlier application by
+  the missing Easy Apply button or an "Application submitted" status, never by the word.
 
 ## Before the final submit
 

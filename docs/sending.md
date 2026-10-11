@@ -684,3 +684,11 @@ account creation to the person.
 - The emailed 8-character security code renders as inline boxes (#security-input-0..7) at the
   bottom of the same page; type into box 0 with delay and click the LAST "Submit application".
 - Validation errors are enumerable via [id*=error], [role=alert]: read them instead of guessing.
+
+## LinkedIn Easy Apply (consented only, 2026-10-11)
+
+Only for a person who authorised it in writing. The controller, the version pairing, the
+desktop-session attach trap, and the form mechanics from the first live batch are in
+[linkedin-easy-apply.md](linkedin-easy-apply.md). The short version: untick "Follow <company>",
+check every prefilled answer against `profile.md`, and defer anything that asks for a salary
+figure or a fact the file does not hold.
