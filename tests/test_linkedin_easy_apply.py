@@ -1,12 +1,24 @@
+from __future__ import annotations
+
 import argparse
 import base64
+import contextlib
+import io
+import sys
+import tempfile
 import unittest
+from pathlib import Path
+from unittest import mock
 
-from scripts.linkedin_easy_apply import (
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "skills/job-hunt/scripts"))
+import linkedin_easy_apply
+from linkedin_easy_apply import (
     UsageError,
     attach_script,
     cli_script,
     encoded_powershell,
+    local_command,
+    main,
     playwright_args,
     require_linkedin_url,
     require_runner,
@@ -76,6 +88,68 @@ class CommandTests(unittest.TestCase):
         command = encoded_powershell(cli_script(["-s=s1", "fill", "e1", value], inline_snapshot=True))
         self.assertNotIn(value, command)
         self.assertIn("'text with & and % characters'", decode(command))
+
+
+class LocalModeTests(unittest.TestCase):
+    def setUp(self):
+        self.fake_cli = Path("/fake/playwright-cli.js")
+        patcher = mock.patch("linkedin_easy_apply.cli_path", return_value=self.fake_cli)
+        self.cli_path_mock = patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_local_command_runs_node_on_the_cached_cli_path(self):
+        self.assertEqual(
+            local_command(["-s=s1", "snapshot"]),
+            ["node", str(self.fake_cli), "-s=s1", "snapshot"],
+        )
+
+    def test_main_with_no_runner_runs_the_local_command(self):
+        with mock.patch.dict("os.environ", {}, clear=False):
+            linkedin_easy_apply.os.environ.pop("LINKEDIN_RUNNER", None)
+            with mock.patch("subprocess.run") as run:
+                run.return_value = mock.Mock(returncode=0, stdout="", stderr="")
+                code = main(["snapshot"])
+        self.assertEqual(code, 0)
+        run.assert_called_once()
+        command = run.call_args[0][0]
+        self.assertEqual(command, ["node", str(self.fake_cli), "-s=linkedin-easy-apply", "snapshot"])
+
+    def test_main_with_runner_still_builds_the_ssh_command(self):
+        with mock.patch("subprocess.run") as run:
+            run.return_value = mock.Mock(returncode=0)
+            code = main(["--runner", "person@runner.example", "snapshot"])
+        self.assertEqual(code, 0)
+        run.assert_called_once()
+        command = run.call_args[0][0]
+        self.assertEqual(command[0], "ssh")
+        self.assertIn("person@runner.example", command)
+        self.cli_path_mock.assert_not_called()
+
+    def test_run_remote_passes_no_window_kwargs(self):
+        with mock.patch.object(linkedin_easy_apply, "local_subprocess_kwargs", return_value={"creationflags": 0x08000000}), \
+                mock.patch("subprocess.run") as run:
+            run.return_value = mock.Mock(returncode=0)
+            main(["--runner", "person@runner.example", "snapshot"])
+        self.assertEqual(run.call_args.kwargs.get("creationflags"), 0x08000000)
+
+    def test_main_prints_inline_snapshot_for_local_snapshot_command(self):
+        tmp = Path(tempfile.mkdtemp())
+        snapshot_path = tmp / "snap1.yml"
+        snapshot_path.write_text("- role: button\n  name: Submit\n", encoding="utf-8")
+        with mock.patch.dict("os.environ", {}, clear=False):
+            linkedin_easy_apply.os.environ.pop("LINKEDIN_RUNNER", None)
+            with mock.patch("subprocess.run") as run:
+                run.return_value = mock.Mock(
+                    returncode=0, stdout=f"saved snapshot ({snapshot_path})\n", stderr=""
+                )
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf):
+                    code = main(["snapshot"])
+        self.assertEqual(code, 0)
+        printed = buf.getvalue()
+        self.assertIn("--- snapshot ---", printed)
+        self.assertIn("role: button", printed)
+        self.assertIn("name: Submit", printed)
 
 
 if __name__ == "__main__":

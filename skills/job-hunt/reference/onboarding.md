@@ -1,0 +1,232 @@
+# Onboarding: one person, asked once
+
+Nothing is searched, written, or sent for a person until onboarding is done and they have confirmed
+the summary. Onboarding runs in two cases:
+
+- **First run.** `onboard.py status` prints `"first_run": true`. If its `workspace` is `null`, ask
+  where the workspace goes (question 0b); otherwise the workspace exists and only has no people
+  yet. Then onboard the first person.
+- **A new person.** Someone asks you to run a search for a name that is not in `people`.
+
+It also runs partially whenever a `## Settings` line in an existing `profile.md` is empty: ask only
+that question, the same way.
+
+---
+
+## How to ask
+
+Ask in **rounds of at most 5 questions**. Each question carries your recommendation. Ask only what
+the opening request and their raw material did not already answer, but keep the numbering below so
+an answer by number is never ambiguous.
+
+**Fixed-choice questions go through the `AskUserQuestion` picker** when your harness has it (Claude
+Code does). Put the recommended option first and mark it in its label, e.g. "Tailored per role,
+general CV for Easy Apply (recommended)". If the picker fits fewer questions per call than the round holds, split the round
+across calls. Open questions (contact details, target roles) go in prose.
+
+**Without the picker, use this format in prose**, one block per question:
+
+```
+❓ **Q1** - **<title>**: <question and options>
+➡️ <recommended answer>
+```
+
+Options carry a marker:
+
+| Marker | Means |
+|---|---|
+| ✅ | recommended, or fine to pick |
+| ⚠️ | powerful; read the warning before picking it |
+| ❌ | not advised |
+
+Contradictions found in their raw data go in the same round as the questions, as a table (see
+"Contradictions" below). They are already answering things; that is the cheapest moment.
+
+---
+
+## First run only: the workspace
+
+**0b. Where should the workspace live?** Recommend `~/job-hunt`. It holds every person's data,
+outside the skill folder, because skill files are replaced on update. Then:
+
+```bash
+python3 <skill-dir>/scripts/onboard.py init ~/job-hunt
+```
+
+That writes only the workspace path to the user config (`~/.config/job-hunt/config.json`, or
+`%APPDATA%\job-hunt\config.json` on Windows). Everything else is per person.
+
+---
+
+## The questions, in order
+
+Each entry says which line of the person's `profile.md` the answer fills. Settings lines are under
+`## Settings`; write the answer in plain words, and for send authority quote the person's own words
+with the date.
+
+### 0. Who is this for?
+
+Yourself, or someone else? Their full name. Then scaffold them:
+
+```bash
+python3 <skill-dir>/scripts/onboard.py person "Hanna Levi"   # prints: created   people/hanna
+```
+
+Fills: the folder name and the profile title. If the script prints a `migrated` line, tell the
+operator which folder moved.
+
+### 1. Contact
+
+Name as it should appear on a CV, email, phone, city (a city, never a street address), and any
+public profile or portfolio URL they are happy to have on the CV.
+
+Fills: `## Contact` (Name, Email, Phone, Location, Public profile / portfolio).
+
+### 2. Raw material
+
+Any existing CV however old, a LinkedIn data export or the text of their profile, anything else:
+certificates, a portfolio, notes in their own words about one thing they built and what changed
+because of it. Every file lands in `raw/` untouched, named for what it is and when it arrived.
+
+Fills: `raw/`, and then the compiled body of `profile.md` (see [profile.md](profile.md)). Compile
+before asking round 2, so later questions can be skipped when the material answers them.
+
+### 3. Target roles and seniority
+
+The shape of the work that counts, and anything that should never be sent to them. Ask how far past
+the obvious fit to reach:
+
+- ✅ **Balanced** (recommended): clean matches, plus roles asking a couple of years more, marked as
+  stretches.
+- ✅ **Tight**: only roles whose stated requirements they already meet.
+- ⚠️ **Wide**: anything with a real argument, including senior titles. Expect a lower reply rate.
+
+Fills: `## Search parameters`, lines 0 (what work counts) and 1 (stretch tolerance). Every stretch
+is still labelled as one in reports, whatever the setting.
+
+### 4. Location and arrangement
+
+The boundary, not just a city: a commute radius, the whole country, named countries, or anywhere.
+On-site, hybrid (with the office-day limit as a number), remote, or no preference. Open to
+relocation?
+
+Fills: `## Search parameters`, line 2 (location, boundary, relocation) and line 3 (on-site,
+hybrid, remote).
+
+### 5. Exclusions
+
+Their current employer, companies they already applied to on their own, companies they will not
+work for.
+
+Fills: Settings `Exclusions:`. Roles at those companies are never sourced.
+
+### 6. Send authority
+
+- ⚠️ **Full autonomy** (recommended): the agent sends without asking. Recorded in writing in
+  profile.md. An application cannot be recalled: a misread fact arrives at a real company under
+  their name. Only pick this on their explicit words, never on silence or a general "go ahead".
+- ✅ **Approve each batch**: they see the list of roles, approve it, and the approved ones go out.
+- **Drafts only**: everything is prepared and handed over; email applications become Gmail drafts;
+  they press send.
+
+Fills: Settings `Send authority:`, with their exact words and the date, e.g.
+`Full autonomy. "yes, send them without showing me" (2026-10-11)`.
+
+### 7. CV mode
+
+- ✅ **Tailored per role, with one general CV for LinkedIn Easy Apply** (recommended).
+- **Tailored per role for everything.**
+- **One general CV for everything.**
+
+Fills: Settings `CV mode:`. The general CV lives in `roles/general-cv/` and renders to
+`cvs/general-cv.pdf`.
+
+### 8. Fixed answers
+
+Forms ask these constantly, and a guess is never acceptable:
+
+- **Degree yes/no wording.** How to answer "Do you have a bachelor's degree?" given their real
+  education. Recommend the literal truth; if studies are in progress, the exact wording they accept.
+  Fills: Settings `Degree yes/no answer:`.
+- **Salary.** A figure (with currency, gross or net, monthly or yearly), or "never fill". With
+  "never fill", a form that forces a number is deferred. Fills: Settings `Salary fields:`.
+- **Work authorisation.** Which countries they may legally work in, and whether they need
+  sponsorship. A hard filter: a remote role advertised for one country usually still needs the
+  right to work there. Fills: Settings `Work authorisation:`.
+
+### 9. Channels
+
+- ✅ **Gmail connector check.** If the claude.ai Gmail connector is available (tools such as
+  `search_threads`, `get_thread`, `create_draft`), run one search on their inbox to confirm it is
+  live. It reads, searches, and drafts, with no password. Fills: Settings `Gmail connector:`.
+- ⚠️ **Automatic email sending** (recommended for full autonomy): needs a Gmail app password. Hint
+  shown: Google Account > Security > 2-Step Verification > App passwords
+  (myaccount.google.com/apppasswords). Stored only in the person's `.env`. It is not their account
+  password: it only works for mail and can be revoked in one click. Write it into
+  `<ws>/people/<p>/.env` as `MAIL_ADDRESS=` and `MAIL_APP_PASSWORD=` (or let them paste it there),
+  never echo it, then confirm it works out loud:
+  `python3 <skill-dir>/scripts/mailbox.py --person <p> list -n 5`.
+  Fills: Settings `Automatic email sending:` (yes or no, never the password).
+- **LinkedIn Easy Apply module** (optional): a local Chrome extension plus the Playwright CLI,
+  driving their own logged-in session. Needs their explicit written authority for both the channel
+  and submission. See [linkedin-easy-apply.md](linkedin-easy-apply.md).
+  Fills: Settings `LinkedIn Easy Apply:`, with their words and the date.
+
+### 10. Batch size and cadence
+
+How many roles per batch, and how often: on request only, or a recorded rhythm such as "8 roles
+every Monday". Recommend 8 to 10 per batch; ten well-matched roles beat fifty scraped ones.
+
+Fills: Settings `Batch size and cadence:`.
+
+---
+
+## Say this once
+
+Before the summary, state this once, verbatim:
+
+> applications.csv is everything decided. deferred.csv holds the roles the agent found and wanted to
+> send but could not, usually because a form needed something only you can answer (salary, legal
+> status, a CAPTCHA). Answer those and the agent sends them.
+
+---
+
+## Contradictions
+
+If compiling their raw data surfaced anything ambiguous or mutually exclusive, put it in the round
+that is going out anyway, as a table:
+
+| # | What I found | Where it came from | What I need |
+|---|---|---|---|
+| A | Two end dates for the same role, 2023 and 2024 | `cv_2024.pdf` vs `linkedin_export.csv` | Which is right |
+| B | Both "Senior" and "Mid-level" for the same period | `notes.txt` vs `old_resume.docx` | Which title was held |
+
+Never resolve a contradiction by picking the more impressive side, or the more recent file. Until
+it is answered, the fact sits in `## Open questions` and neither version goes on a CV.
+
+---
+
+## The summary to confirm
+
+Onboarding ends with one table covering every Settings line, contact, targets, and every assumption
+that shapes the search. Mark each row as stated by them or assumed by you, and say where an
+assumption came from (a file in `raw/`, a line of `profile.md`, or "default").
+
+| Item | Value | Source |
+|---|---|---|
+| Send authority | Approve each batch | stated, Q6 |
+| CV mode | Tailored per role, general CV for Easy Apply | stated, Q7 |
+| Target | Backend and full-stack, mid-level | assumed: every role in `raw/cv_2024.pdf` is server-side |
+| Language of applications | English | assumed: CV and public profile are in English |
+| Salary | Never fill | stated, Q8 |
+| Batch | 8 roles, on request | default |
+
+Ask them to confirm or correct. Apply corrections to `profile.md`, then start the first batch.
+Never put a stated fact under "assumed", and keep the table to what genuinely matters: twenty rows
+of trivia hide the one that is wrong.
+
+## Credentials
+
+Once a credential exists it is never printed, echoed back, put in a summary, written into any file
+other than that person's `.env`, or included in an error message. If a command would print it,
+redact the output before showing it. Never ask for an account password; ask for an app password.

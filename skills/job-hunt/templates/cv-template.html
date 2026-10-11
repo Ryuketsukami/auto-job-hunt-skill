@@ -1,0 +1,188 @@
+<!doctype html>
+<!--
+  ATS-safe A4 print template. Copy to <role-dir>/cv.html and fill every {{MARKER}}.
+  A leftover {{MARKER}} fails preflight - that is deliberate.
+
+  Render and verify:
+    python3 <skill-dir>/scripts/preflight.py <ws>/people/<p>/roles/<batch>-<company>-<role>
+    python3 <skill-dir>/scripts/render.py    <ws>/people/<p>/roles/<batch>-<company>-<role>
+  Preflight must exit 0; render must print: pages 1
+
+  Structural rules - do not break these, they are what keeps it parseable:
+    * Single column. The flex rows below are label/value pairs, never data columns.
+    * No <table>, no images, no icons, no rating bars, no percentages.
+    * Section headings stay conventional: Summary, Skills, Experience, Projects,
+      Education, Certifications, Languages. Order may change; labels do not.
+    * Contact line is plain body text; email bare, URLs bare, never split across lines.
+    * Privacy-first markets (North America, UK, Israel, Australia): no photo, no date
+      of birth, no nationality, no marital status, no military service, no street address.
+      Where a photo is conventional, follow the local convention - see reference/cv-doctrine.md.
+
+  Voice - enforced by preflight.py:
+    * Implied subject. "Built the deployment pipeline." Never "He built", never the
+      person's name, never "I built".
+    * Nothing that reveals an agent wrote this. No tool names, no "generated",
+      no meta-commentary, no leftover markers.
+    * No em dashes and no spaced en dashes anywhere in visible text; use a comma,
+      colon, period, or plain hyphen. No assistant-flavoured stock phrasing.
+
+  Fitting to one page: shrink slightly first, then cut. Body 10.4px -> 10.1px and
+  line-height 1.38 -> 1.34 are safe; below that it reads as cramped. If it still
+  spills, cut the least-relevant bullet or project, never protected evidence.
+  Two reflow passes maximum.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>{{FULL_NAME}} - CV</title>
+<style>
+  @page { size: A4; margin: 13mm 15mm 12mm; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    color: #1b1f2a;
+    font-size: 10.4px;
+    line-height: 1.38;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  a { color: #2456b3; text-decoration: underline; text-underline-offset: 2px; }
+
+  /* Header */
+  .name { font-size: 25px; font-weight: 800; letter-spacing: -0.4px; color: #22345e; line-height: 1; margin: 0; }
+  .headline { margin: 5px 0 0; font-size: 11px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: #4a5878; }
+  .contact { margin: 7px 0 0; font-size: 9.6px; color: #5a6172; letter-spacing: 0.1px; }
+  .contact .dot { color: #b7bdca; margin: 0 6px; }
+  .rule { height: 2px; background: #22345e; margin: 11px 0 0; }
+
+  /* Sections */
+  section { margin-top: 10px; }
+  .sec-title { font-size: 9.4px; font-weight: 800; letter-spacing: 1.7px; text-transform: uppercase; color: #22345e; padding-bottom: 3px; border-bottom: 1px solid #d7dbe4; margin: 0 0 7px; }
+  .summary { margin: 0; color: #2b3040; }
+
+  /* Skills - label/value pairs, not data columns */
+  .skill-row { margin: 0 0 3px; display: flex; gap: 8px; }
+  .skill-row:last-child { margin-bottom: 0; }
+  .skill-cat { flex: 0 0 108px; font-weight: 700; color: #22345e; }
+  .skill-val { color: #2b3040; }
+
+  /* Entries - experience, education */
+  .entry { margin: 0 0 8px; }
+  .entry:last-child { margin-bottom: 0; }
+  .entry-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .entry-title { font-weight: 700; color: #1b1f2a; }
+  .entry-title .org { color: #4a5878; font-weight: 700; }
+  .entry-meta { color: #737b8c; font-size: 9.5px; white-space: nowrap; }
+
+  ul.bullets { margin: 4px 0 0; padding: 0; list-style: none; }
+  ul.bullets li { position: relative; padding-left: 12px; margin: 0 0 2px; color: #2b3040; }
+  ul.bullets li::before { content: ""; position: absolute; left: 0; top: 6px; width: 4px; height: 4px; background: #6c7b9c; border-radius: 50%; }
+
+  /* Projects */
+  .proj { margin: 0 0 5.5px; }
+  .proj:last-child { margin-bottom: 0; }
+  .proj-name { font-weight: 700; color: #1b1f2a; }
+  .proj-tech { font-size: 9px; color: #737b8c; letter-spacing: 0.2px; margin-left: 6px; }
+  .proj-url { color: #4a5878; font-weight: 600; }
+  .proj-desc { color: #2b3040; margin-top: 1px; }
+
+  .langs { color: #2b3040; }
+  .langs b { color: #22345e; }
+
+  .certs { color: #2b3040; }
+  .certs b { color: #22345e; }
+</style>
+</head>
+<body>
+
+  <!-- Contact details as visible text, linked. The visible text stays a bare
+       address / bare URL (parser-safe), but each one is a real anchor - mailto:
+       for the email, https:// for every URL, tel: for the phone - underlined and
+       link-coloured so a human can click them in the PDF. Never an icon, never
+       split across lines, never only in a header or footer element - many parsers
+       discard both. City or country only; no street address. -->
+  <header>
+    <h1 class="name">{{FULL_NAME}}</h1>
+    <!-- Aim at the TARGET role: seniority the person actually has, 3-4 core
+         technologies, a specialisation. Never relabel a real past job title. -->
+    <div class="headline">{{HEADLINE}}</div>
+    <div class="contact">
+      <a href="mailto:{{EMAIL}}">{{EMAIL}}</a>
+      <span class="dot">·</span> <a href="tel:{{PHONE}}">{{PHONE}}</a>
+      <span class="dot">·</span> <a href="https://{{PROFILE_URL}}">{{PROFILE_URL}}</a>
+      <span class="dot">·</span> {{LOCATION}}
+    </div>
+    <div class="rule"></div>
+  </header>
+
+  <!-- Two lines maximum, three at the absolute limit. About the PERSON, not the stack:
+       no technology names, no "passionate", no affection for tooling. A claim about how
+       they deliver. Write it fresh from reference/cv-doctrine.md, never from an old CV. -->
+  <section>
+    <h2 class="sec-title">Summary</h2>
+    <p class="summary">{{SUMMARY}}</p>
+  </section>
+
+  <!-- 4-6 rows, ~15-20 genuinely-known technologies total, each row ordered by
+       relevance to THIS posting. A Working Knowledge row, if the person authorised
+       one, goes last and nowhere else. -->
+  <section>
+    <h2 class="sec-title">Skills</h2>
+    <div class="skill-row"><div class="skill-cat">{{SKILL_CATEGORY}}</div><div class="skill-val">{{SKILL_VALUES}}</div></div>
+  </section>
+
+  <!-- Reverse-chronological. Lead each role with its most posting-relevant quantified
+       achievement. One date format across every dated entry on the page. -->
+  <section>
+    <h2 class="sec-title">Experience</h2>
+    <div class="entry">
+      <div class="entry-head">
+        <div class="entry-title">{{JOB_TITLE}} <span class="org">· {{EMPLOYER}}</span></div>
+        <div class="entry-meta">{{DATES}}</div>
+      </div>
+      <ul class="bullets">
+        <li>{{BULLET}}</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Often the strongest evidence for someone early in their career. Pick the 3-5
+       that serve this posting. Keep the real numbers - never round a specific into
+       a generic. -->
+  <section>
+    <h2 class="sec-title">Projects</h2>
+    <div class="proj">
+      <div><span class="proj-name">{{PROJECT_NAME}}</span><span class="proj-tech">{{TECH}}</span></div>
+      <div class="proj-desc">{{DESCRIPTION}} <span class="proj-url">{{URL}}</span></div>
+    </div>
+  </section>
+
+  <!-- Facts only, from profile.md. If the person gave a handling instruction about
+       how their education is presented, it lives in profile.md and is enforced by
+       their .preflight file - never annotated here. -->
+  <section>
+    <h2 class="sec-title">Education</h2>
+    <div class="entry">
+      <div class="entry-head">
+        <div class="entry-title">{{QUALIFICATION}} <span class="org">· {{INSTITUTION}}</span></div>
+        <div class="entry-meta">{{DATES}}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Protected evidence. Retarget the framing, never cut. One line, all of them,
+       most relevant to THIS posting first. -->
+  <section>
+    <h2 class="sec-title">Certifications</h2>
+    <div class="certs"><b>{{CERTIFICATION}}</b> {{ISSUER}}, {{YEAR}}</div>
+  </section>
+
+  <!-- Own section, never inside skills. Never leave a proficiency blank. -->
+  <section>
+    <h2 class="sec-title">Languages</h2>
+    <div class="langs"><b>{{LANGUAGE}}</b> {{LEVEL}}</div>
+  </section>
+
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "job-hunt",
+  "version": "2.0.0",
+  "description": "AI job search agent for Claude Code: grill-style onboarding, a verified profile, one tailored ATS-friendly CV per posting, applications through each employer's official channel (forms, email, LinkedIn Easy Apply), and an honest two-CSV ledger.",
+  "author": {
+    "name": "Ryuketsukami"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/Ryuketsukami/auto-job-hunt-skill",
+  "homepage": "https://github.com/Ryuketsukami/auto-job-hunt-skill",
+  "keywords": [
+    "job-search",
+    "auto-apply",
+    "resume",
+    "cv",
+    "ats",
+    "job-application",
+    "linkedin-easy-apply",
+    "claude-code",
+    "agent-skill"
+  ]
+}

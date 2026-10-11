@@ -1,0 +1,16 @@
+{
+  "name": "auto-job-hunt-skill",
+  "owner": {
+    "name": "Ryuketsukami"
+  },
+  "metadata": {
+    "description": "The job-hunt skill: tailored, verified CVs and applications through each employer's official channel."
+  },
+  "plugins": [
+    {
+      "name": "job-hunt",
+      "source": "./",
+      "description": "AI job search agent: tailored CV per posting, real applications, honest ledger"
+    }
+  ]
+}

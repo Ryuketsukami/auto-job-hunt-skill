@@ -1,9 +1,7 @@
 # Everyone's data. None of it is ever pushed anywhere.
-people/*
-!people/README.md
-!people/.gitkeep
+people/
 
-# Credentials, belt and braces — people/* already covers these.
+# Credentials, belt and braces: people/* already covers these.
 .env
 .env.*
 !.env.example
@@ -12,7 +10,6 @@ people/*
 
 # Rendered artifacts outside a person directory
 *.pdf
-!templates/**/*.pdf
 
 __pycache__/
 *.py[cod]
@@ -22,3 +19,6 @@ node_modules/
 
 # Local agent session files
 runtime/
+
+# Maintainer scrub list for tools/scrub_check.py: real names, never committed.
+.scrub-names
