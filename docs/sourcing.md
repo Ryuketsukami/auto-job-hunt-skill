@@ -5,24 +5,37 @@ per-role tailoring and follow-up are. If a batch can only honestly fill six, pre
 
 ---
 
-## LinkedIn is not automated. This is deliberate.
+## LinkedIn Easy Apply requires explicit written authority
 
-**Do not scrape LinkedIn, drive a logged-in session, or automate Easy Apply.**
+LinkedIn Easy Apply may be driven only when the person has explicitly authorised both the channel
+and submission in writing. That authority belongs in `profile.md` before the first browser action.
+General send authority does not silently extend to LinkedIn.
 
-There is no self-serve API for job search. LinkedIn's public products cover identity and posting;
-job search and Easy Apply sit behind Talent Solutions, gated by an ATS-partner commercial agreement.
-That leaves driving the person's own session, which the User Agreement's "Don'ts" prohibit — and the
-penalty lands on the single account their job search depends on.
+When authorised:
 
-Two legitimate substitutes cover almost everything:
+- Use the person's existing logged-in session on their own machine. Never request, print, copy, or
+  persist their LinkedIn credential.
+- Use a visible browser started on demand. Drive one observed step at a time through a
+  screenshot, analyse, act loop. Do not leave a timer, watcher, or unattended recurring process.
+- Check `applications.csv` before opening the role. The same role is never submitted twice.
+- Use the current verified CV and the person's standing answers from `profile.md`. A LinkedIn field
+  does not loosen any fact, degree, salary, or omission rule.
+- Stop on a CAPTCHA, identity check, security warning, account lock, or ambiguous final-submit
+  state. Park the form for the person rather than bypassing the wall.
+- Treat one successfully confirmed application as the test before using a new driver for a batch.
+  Record the role, channel, date, and confirmation proof in `applications.csv` immediately.
+
+This authorisation covers Easy Apply submissions only. It does not authorise scraping LinkedIn,
+harvesting profiles, sending connection requests or messages, or evading rate limits and account
+controls.
+
+LinkedIn data exports and job-alert emails remain supported inputs:
 
 - **Their LinkedIn data export** (Settings → Data Privacy → Get a copy of your data) for reading their
   own profile into `source_data/raw/`.
 - **The job-alert emails LinkedIn already sends them**, below.
 
-If the person asks for automation anyway, **re-raise the objection rather than quietly comply.** They
-are usually asking for the outcome, not the mechanism, and the mechanism is the part that costs them
-their account.
+The complete browser procedure is in [linkedin-easy-apply.md](linkedin-easy-apply.md).
 
 ---
 
