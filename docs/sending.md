@@ -164,6 +164,19 @@ Each of these was paid for once. Read them before driving a form, not after.
 
 - Can reject a completed submit as *"flagged as possible spam"*, and its own advice is to submit again.
   A re-click on a still-filled page is the fix — which is an argument for parking rather than refilling.
+- **Field ids are opaque UUIDs**, but every field has a real `<label for="...">` — dump labels by
+  `htmlFor` association first, then fill by `[id="..."]`. System fields keep stable ids
+  (`_systemfield_name`, `_systemfield_email`, `_systemfield_resume`).
+- **Two file inputs**: the first is "Autofill from resume" (a parser, not the application CV). The
+  CV goes on `_systemfield_resume` only.
+- **Yes/No questions are plain `<button>` pairs**, not radios or checkboxes — a label click does
+  nothing. Find the question text, walk up, click the button whose exact text is wanted, and expect
+  "Missing entry for required field" validation if it was skipped.
+- **An "application limits" banner** ("up to N applications within a 60-day period") is
+  informational, not a block — but it means a failed submit retried later still counts against N,
+  so fix validation errors in one session rather than re-entering the form on another day.
+- **hCaptcha can interpose as a full image challenge at submit** (seen live, Irregular 2026-10-11),
+  not just the checkbox variant. Standard park: everything filled, challenge untouched, hand over.
 
 **AllJobs (alljobs.co.il)**
 
