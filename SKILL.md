@@ -102,9 +102,9 @@ Everything they hand you lands in `source_data/raw/` untouched. On top of it you
 
 ### 3–6. SOURCE, SELECT, GENERATE, DELIVER
 
-- **[docs/sourcing.md](docs/sourcing.md)** — where postings come from, the filters, and the written
+- **[docs/sourcing.md](docs/sourcing.md)**: where postings come from, the filters, and the written
   authority required for LinkedIn Easy Apply.
-- **[docs/linkedin-easy-apply.md](docs/linkedin-easy-apply.md)** — the bounded browser controller,
+- **[docs/linkedin-easy-apply.md](docs/linkedin-easy-apply.md)**: the bounded browser controller,
   screenshot loop, submit gate, proof, and cleanup for an authorised Easy Apply session.
 - **[docs/cv-doctrine.md](docs/cv-doctrine.md)** — the nine-step per-CV algorithm, the ATS and
   credibility rules, the scoring rubric, and the voice rules.
