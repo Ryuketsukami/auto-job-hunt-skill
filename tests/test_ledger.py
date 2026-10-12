@@ -63,6 +63,13 @@ class LedgerTests(unittest.TestCase):
         self.assertEqual((r["batch"], r["status"]), ("2", "✅ sent"))
         self.assertIn("deferred from batch 1", r["reason_or_notes"])
 
+    def test_promote_overrides_channel_and_notes(self):
+        ledger.defer(self.p, company="A", role="r", url="u1", needs="salary figure", notes="needs salary")
+        ledger.promote(self.p, "u1", status="sent", channel="linkedin-easy-apply", notes="sent with 30k")
+        r = self.rows("applications.csv")[0]
+        self.assertEqual(r["channel"], "linkedin-easy-apply")
+        self.assertEqual(r["reason_or_notes"], "sent with 30k; deferred from batch 1")
+
     def test_set_status_and_age(self):
         ledger.add(self.p, company="A", role="r", url="u1", status="sent", date="2026-01-01")
         ledger.add(self.p, company="B", role="r", url="u2", status="sent", date="2026-01-01")

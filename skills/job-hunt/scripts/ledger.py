@@ -212,7 +212,7 @@ def defer(person: Path, *, needs, company, role, url, location="", arrangement="
     return row
 
 
-def promote(person: Path, url: str, *, status, proof="", cv_file="") -> dict:
+def promote(person: Path, url: str, *, status, proof="", cv_file="", channel="", notes="") -> dict:
     icon = _applications_icon(status)
     deferred_rows = _read_rows(_deferred_path(person), DEFERRED_COLUMNS)
     match = None
@@ -228,7 +228,7 @@ def promote(person: Path, url: str, *, status, proof="", cv_file="") -> dict:
 
     from_batch = match.get("batch", "")
     today = _today_iso()
-    notes = match.get("reason_or_notes", "")
+    notes = notes or match.get("reason_or_notes", "")
     note_suffix = f"deferred from batch {from_batch}"
     notes = f"{notes}; {note_suffix}" if notes else note_suffix
     new_row = {
@@ -239,7 +239,7 @@ def promote(person: Path, url: str, *, status, proof="", cv_file="") -> dict:
         "location": match.get("location", ""),
         "arrangement": match.get("arrangement", ""),
         "url": url,
-        "channel": match.get("channel", ""),
+        "channel": channel or match.get("channel", ""),
         "cv_file": cv_file or match.get("cv_file", ""),
         "status": icon,
         "status_date": today,
@@ -408,7 +408,8 @@ def main(argv=None) -> int:
             )
             _print_row(row)
         elif args.cmd == "promote":
-            row = promote(person, args.url, status=args.status, proof=args.proof, cv_file=args.cv_file)
+            row = promote(person, args.url, status=args.status, proof=args.proof, cv_file=args.cv_file,
+                          channel=args.channel or "", notes=args.notes or "")
             _print_row(row)
         elif args.cmd == "set-status":
             row = set_status(person, args.url, args.status)
