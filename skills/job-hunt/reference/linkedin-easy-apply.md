@@ -2,7 +2,7 @@
 
 An optional module, for a person whose `profile.md` Settings line `LinkedIn Easy Apply:` records
 their explicit written authority for both the channel and submission, with the date (onboarding
-question 9). General send authority does not silently extend to LinkedIn. No authority recorded:
+section 9). General send authority does not silently extend to LinkedIn. No authority recorded:
 LinkedIn roles go through the employer's own channel instead.
 
 Easy Apply uploads the general CV when the CV mode says so (`cvs/general-cv.pdf`), otherwise the

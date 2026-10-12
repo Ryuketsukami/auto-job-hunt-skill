@@ -122,6 +122,28 @@ class PreflightWorkspaceTests(unittest.TestCase):
 
     # -- failing cases, each asserting the specific rule ---------------------
 
+    def test_env_secret_in_form_answers_fails_without_printing_it(self):
+        import io, contextlib
+        (self.person / ".env").write_text(
+            "MAIL_ADDRESS=hanna@example.com\nMAIL_APP_PASSWORD=abcd efgh ijkl mnop\nSMTP_PORT=587\n",
+            encoding="utf-8")
+        self.write_cv(CLEAN_CV)
+        (self.role_dir / "form-answers.txt").write_text("cover: abcdefghijklmnop\n", encoding="utf-8")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(preflight.main(["preflight", str(self.role_dir)]), 1)
+        self.assertIn("credential from the person's .env", out.getvalue())
+        self.assertNotIn("abcd", out.getvalue())
+
+    def test_env_only_credential_keys_count(self):
+        (self.person / ".env").write_text(
+            "MAIL_ADDRESS=hanna.levi@example.com\nSMTP_PORT=587\nSITE_PIN=12\nGREENHOUSE_PASSWORD='s3cret-pw'\n",
+            encoding="utf-8")
+        self.assertEqual(preflight.read_secrets(self.person), ["s3cret-pw"])
+        self.write_cv(CLEAN_CV)
+        self.assertEqual(preflight.main(["preflight", str(self.role_dir)]), 0)
+
+
     def test_first_person_fails(self):
         bad = CLEAN_CV.replace(
             "Built a payments reconciliation service handling 2M transactions a day.",

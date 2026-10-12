@@ -19,8 +19,9 @@ touches an existing one.
 permissions: Claude Code accepts bypassPermissions as a default mode only from
 its user settings file (project and local settings are ignored for it), so
 "bypass" writes permissions.defaultMode there, keeping every other key and a
-one-time backup. It never sets skipDangerousModePermissionPrompt: Claude Code's
-own confirmation stays the person's to accept.
+one-time backup, and adds a deny rule so Claude Code's Read tool (and plain cat)
+cannot open any person's .env. It never sets skipDangerousModePermissionPrompt:
+Claude Code's own confirmation stays the person's to accept.
 """
 from __future__ import annotations
 
@@ -203,15 +204,38 @@ def permission_mode() -> str | None:
     return _read_settings(claude_settings_path()).get("permissions", {}).get("defaultMode")
 
 
+def env_deny_rule() -> str | None:
+    """Read(...) rule covering every person's .env, in Claude Code's path syntax:
+    ~/ for home-relative, // for absolute."""
+    ws = workspace.load_workspace()
+    if ws is None:
+        return None
+    ws = ws.resolve()
+    try:
+        return f"Read(~/{ws.relative_to(Path.home().resolve()).as_posix()}/people/**/.env)"
+    except ValueError:
+        return f"Read(//{ws.as_posix().lstrip('/')}/people/**/.env)"
+
+
 def set_bypass(on: bool) -> str:
-    """Turn the user-level bypass default on, or remove it. Returns the new mode."""
+    """Turn the user-level bypass default on (with the .env deny rule), or remove both.
+    Returns the new mode."""
     path = claude_settings_path()
     data = _read_settings(path)
     perms = data.setdefault("permissions", {})
+    rule = env_deny_rule()
+    deny = perms.get("deny", [])
     if on:
         perms["defaultMode"] = BYPASS
-    elif perms.get("defaultMode") == BYPASS:
-        del perms["defaultMode"]
+        if rule and rule not in deny:
+            perms["deny"] = deny + [rule]
+    else:
+        if perms.get("defaultMode") == BYPASS:
+            del perms["defaultMode"]
+        if rule in deny:
+            deny.remove(rule)
+            if not deny:
+                del perms["deny"]
     if not perms:
         del data["permissions"]
     _write_settings(path, data)

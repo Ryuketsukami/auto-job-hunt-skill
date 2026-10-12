@@ -3,6 +3,10 @@
 
     python3 <skill-dir>/scripts/preflight.py people/hanna/roles/1-acme-backend-engineer
 
+Also fails if any value from the person's .env (an app password, a site password)
+appears in any text file in the role directory: CV, cover letter, form answers, email
+body. The value itself is never printed.
+
 Exit 0 means every outward artifact in that directory is clean. Exit 1 means at least
 one ERROR. Warnings never fail the run but are always printed.
 
@@ -149,6 +153,44 @@ def read_banned(person: Path | None) -> list[str]:
     return out
 
 
+SECRET_MIN_LEN = 6
+# Only credential-shaped keys: MAIL_ADDRESS legitimately appears on the CV itself.
+SECRET_KEY = re.compile(r"PASS|SECRET|TOKEN|KEY|COOKIE|PIN", re.I)
+TEXT_SUFFIXES = {".html", ".htm", ".txt", ".md", ".json", ".eml", ".csv", ".yaml", ".yml"}
+
+
+def read_secrets(person: Path | None) -> list[str]:
+    """Credential values from the person's .env: password, token and key entries only."""
+    if person is None or not (person / ".env").exists():
+        return []
+    out = []
+    for raw in (person / ".env").read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = (part.strip() for part in line.split("=", 1))
+        value = value.strip('"').strip("'")
+        if SECRET_KEY.search(key) and len(value) >= SECRET_MIN_LEN:
+            out.append(value)
+    return out
+
+
+def check_secrets(role_dir: Path, secrets: list[str]) -> list[Finding]:
+    """Every text file in the role directory, since anything there may go out."""
+    findings = []
+    for path in sorted(role_dir.iterdir()):
+        if not path.is_file() or path.suffix.lower() not in TEXT_SUFFIXES:
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for i, ln in enumerate(text.splitlines(), 1):
+            if any(v in ln or v.replace(" ", "") in ln.replace(" ", "") for v in secrets):
+                findings.append(Finding(
+                    "ERROR", path, i,
+                    "a credential from the person's .env is in this file; remove it and find out how it got there",
+                    "[value redacted]"))
+    return findings
+
+
 def read_person_names(person: Path | None) -> list[str]:
     """Name tokens that must not appear in the body of the person's own CV."""
     if person is None:
@@ -290,6 +332,7 @@ def main(argv: list[str]) -> int:
     findings: list[Finding] = []
     for path in targets:
         findings += check_file(path, banned, names, is_letter="cover" in path.name.lower())
+    findings += check_secrets(role_dir, read_secrets(person))
 
     errors = [f for f in findings if f.level == "ERROR"]
     warns = [f for f in findings if f.level == "WARN"]

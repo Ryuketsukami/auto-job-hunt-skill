@@ -4,6 +4,11 @@ Nothing is sent beyond what the person's `Send authority:` line in `profile.md` 
 CV is not authorising a send (rule 6): it is the rule people are most surprised by, which is why it
 is written down.
 
+**Everything you type into a form or an email is an artifact.** Save the answers to free-text
+fields (cover letter, "anything else?", screening answers) and every email body in the role
+directory, as `form-answers.txt` or `email.txt`, before `preflight.py` runs. That way the same gate
+that checks the CV checks them too, including for a `.env` credential.
+
 Every application goes through the **employer's own official path**. Finding that path is its own
 step, and the obvious URL is often the wrong one.
 
@@ -26,7 +31,7 @@ application becomes a **draft** in the person's account: subject, first-person b
 attached, ready for them to press send. Record it as deferred with
 `--needs "send the Gmail draft to <address>"`, and promote it once they confirm it went.
 
-**Opt-in: automatic sending.** With an app password in the person's `.env` (onboarding question 9),
+**Opt-in: automatic sending.** With an app password in the person's `.env` (onboarding section 9),
 `mailbox.py` sends from their own address over SMTP and reads over IMAP:
 
 ```bash

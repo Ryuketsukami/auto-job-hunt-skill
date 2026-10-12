@@ -145,8 +145,14 @@ class OnboardTests(unittest.TestCase):
 class PermissionsTests(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
-        self.env = mock.patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": str(self.tmp)}, clear=False)
+        self.env = mock.patch.dict(
+            os.environ,
+            {"CLAUDE_CONFIG_DIR": str(self.tmp), "XDG_CONFIG_HOME": str(self.tmp / "cfg"),
+             "APPDATA": str(self.tmp / "cfg")},
+            clear=False,
+        )
         self.env.start()
+        os.environ.pop("JOB_HUNT_WORKSPACE", None)
         self.settings = self.tmp / "settings.json"
 
     def tearDown(self):
@@ -168,6 +174,22 @@ class PermissionsTests(unittest.TestCase):
         self.assertEqual(json.loads(self.settings.read_text()), {})
         self.settings.write_text('{"permissions": {"defaultMode": "acceptEdits"}}')
         self.assertEqual(onboard.set_bypass(False), "acceptEdits")
+
+    def test_bypass_adds_env_deny_rule_and_restore_removes_it(self):
+        ws = self.tmp / "home" / "job-hunt"
+        with mock.patch.object(onboard.workspace, "load_workspace", return_value=ws), \
+             mock.patch.object(onboard.Path, "home", return_value=self.tmp / "home"):
+            onboard.set_bypass(True)
+            onboard.set_bypass(True)
+            deny = json.loads(self.settings.read_text())["permissions"]["deny"]
+            self.assertEqual(deny, ["Read(~/job-hunt/people/**/.env)"])
+            onboard.set_bypass(False)
+        self.assertEqual(json.loads(self.settings.read_text()), {})
+
+    def test_deny_rule_for_workspace_outside_home_is_absolute(self):
+        with mock.patch.object(onboard.workspace, "load_workspace", return_value=Path("/srv/jobs")), \
+             mock.patch.object(onboard.Path, "home", return_value=self.tmp / "home"):
+            self.assertEqual(onboard.env_deny_rule(), "Read(//srv/jobs/people/**/.env)")
 
     def test_bypass_creates_missing_file(self):
         onboard.set_bypass(True)

@@ -33,6 +33,7 @@ from email.header import decode_header, make_header
 from email.message import EmailMessage
 from pathlib import Path
 
+import preflight
 import workspace
 
 DEFAULTS = {
@@ -113,6 +114,10 @@ def body_of(msg: email.message.Message) -> str:
 
 def cmd_send(cfg: dict[str, str], args: argparse.Namespace) -> int:
     body = Path(args.body_file).read_text(encoding="utf-8") if args.body_file else (args.body or "")
+    outgoing = (args.subject + "\n" + body).replace(" ", "")
+    if any(v.replace(" ", "") in outgoing for k, v in cfg.items()
+           if preflight.SECRET_KEY.search(k) and len(v) >= preflight.SECRET_MIN_LEN):
+        sys.exit("mailbox: refused, the subject or body contains a credential from .env (value not shown)")
     if not body.strip():
         sys.exit("mailbox: refusing to send an empty body")
 

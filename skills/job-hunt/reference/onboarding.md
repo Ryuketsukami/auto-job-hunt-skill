@@ -4,7 +4,7 @@ Nothing is searched, written, or sent for a person until onboarding is done and 
 the summary. Onboarding runs in two cases:
 
 - **First run.** `onboard.py status` prints `"first_run": true`. If its `workspace` is `null`, ask
-  where the workspace goes (question 0b); otherwise the workspace exists and only has no people
+  where the workspace goes (section 0b); otherwise the workspace exists and only has no people
   yet. Then onboard the first person.
 - **A new person.** Someone asks you to run a search for a name that is not in `people`.
 
@@ -16,16 +16,21 @@ that question, the same way.
 ## How to ask
 
 Ask in **rounds of at most 5 questions**. Each question carries your recommendation. Ask only what
-the opening request and their raw material did not already answer, but keep the numbering below so
-an answer by number is never ambiguous.
+the opening request and their raw material did not already answer.
+
+**Number the questions as you ask them, not by this file.** The numbered sections below are for
+reference only. The person sees Q1, Q2, Q3 in the order the questions reach them, and the count
+carries on across rounds for the whole onboarding: if round one ended at Q4, round two starts at Q5.
+Never restart, reuse, or skip a number, so "Q6: yes" always means one question. A follow-up asked
+on its own (the permissions warning, a broken link) takes the next number too.
 
 **The CV comes first.** If the opening request carried no CV or other raw material, the first round
-asks for it (question 1), together with question 0 if the person is not yet named. Nothing else is
+asks for it (section 1), together with section 0 if the person is not yet named. Nothing else is
 asked until it arrives or they say they have none, because it answers most of what follows. Once it
 is in, save it to `raw/`, compile, and fill every field it already holds before the next round.
 
 **Never ask what the material already answers.** After compiling, go through every question below
-and fill each answer the raw material settles; questions marked **Skip when** name the usual cases.
+and fill each answer the raw material settles; sections marked **Skip when** name the usual cases.
 Ask only where the material is silent, unclear, or contradicts itself. Preferences (stretch
 tolerance, arrangement, send authority, CV mode, salary, batch size) are never in a CV and are
 always asked. Every filled answer appears in the closing summary as assumed, with the file it came
@@ -142,7 +147,7 @@ The boundary, not just a city: a commute radius, the whole country, named countr
 On-site, hybrid (with the office-day limit as a number), remote, or no preference. Open to
 relocation?
 
-The city comes from the contact details (question 2); ask only for the boundary and arrangement.
+The city comes from the contact details (section 2); ask only for the boundary and arrangement.
 
 Fills: `## Search parameters`, line 2 (location, boundary, relocation) and line 3 (on-site,
 hybrid, remote).
@@ -159,37 +164,46 @@ Fills: Settings `Exclusions:`. Roles at those companies are never sourced.
 
 ### 6. Send authority
 
-- ⚠️ **Full autonomy** (recommended): the agent sends without asking. Recorded in writing in
-  profile.md. An application cannot be recalled: a misread fact arrives at a real company under
-  their name. Only pick this on their explicit words, never on silence or a general "go ahead".
-- ✅ **Approve each batch**: they see the list of roles, approve it, and the approved ones go out.
+- ✅ **Approve each batch** (recommended): they see the list of roles, approve it, and the approved
+  ones go out. Most people want to see what goes out under their name, at least at first.
+- ⚠️ **Full autonomy**: the agent sends without asking. An application cannot be recalled: a
+  misread fact arrives at a real company under their name. Only pick this on their explicit words,
+  never on silence or a general "go ahead".
 - **Drafts only**: everything is prepared and handed over; email applications become Gmail drafts;
   they press send.
 
 Fills: Settings `Send authority:`, with their exact words and the date, e.g.
-`Full autonomy. "yes, send them without showing me" (2026-10-11)`.
+`Approve each batch. "show me the list first" (2026-10-12)`.
 
-**If they pick full autonomy, warn them about permissions next, in the same round:**
+### 6b. Tool permissions
 
-> ⚠️ Full autonomy also turns on Claude Code's **bypass permissions** mode: from the next start, the
-> agent runs commands, edits files, and drives the browser with no permission prompt. Claude Code
-> takes this mode only from its user settings (`~/.claude/settings.json`), so it applies to **every
-> Claude Code session on this computer, in every folder**, not only the job hunt. A mistake, or an
-> instruction hidden in a job posting, then meets no prompt. Undo it any time with
+Ask everyone, whatever they chose for send authority: without it, every `curl`, page load, and file
+write stops for a click, and a batch takes an afternoon of babysitting. Recommend turning it on, and
+put this warning in the question itself:
+
+> ⚠️ **Bypass permissions** (recommended): from the next start, the agent runs commands, edits files,
+> and drives the browser without a permission prompt. Claude Code takes this mode only from its user
+> settings (`~/.claude/settings.json`), so it applies to **every Claude Code session on this
+> computer, in every folder**, not only the job hunt. A mistake, or an instruction hidden in a job
+> posting, then meets no prompt. It does not change who presses send: that stays as you chose. A
+> deny rule keeps the agent's file reader away from your saved passwords. Undo it any time with
 > `onboard.py permissions restore`. Turn it on?
 
-Only on an explicit yes:
+Only on an explicit yes, and only after the workspace exists:
 
 ```bash
 python3 <skill-dir>/scripts/onboard.py permissions bypass    # prints: defaultMode bypassPermissions   <path>
 ```
 
-It keeps every other setting and backs the file up once to `settings.json.job-hunt.bak`. It takes
-effect on the next start of Claude Code, which then shows its own warning; that one is theirs to
-accept, so the script never pre-accepts it. Claude Code refuses this mode when run as root. If
+It keeps every other setting, backs the file up once to `settings.json.job-hunt.bak`, and adds
+`Read(~/job-hunt/people/**/.env)` (the real workspace path) to `permissions.deny`. That rule blocks
+the Read tool and a plain `cat`; it is a guard rail, not a vault, since a script can still open the
+file. The real protection is that credentials never need to enter the conversation (`mailbox.py`
+reads the `.env` itself) and that nothing holding one can leave (`preflight.py`, `mailbox.py`). It
+takes effect on the next start of Claude Code, which then shows its own warning; that one is theirs
+to accept, so the script never pre-accepts it. Claude Code refuses this mode when run as root. If
 `onboard.py permissions status` already shows `bypassPermissions` (an earlier person turned it on),
-say so and skip the question. A no changes nothing else: full autonomy over sending still stands,
-with permission prompts along the way.
+say so and skip the question. A no changes nothing else: every command then asks first.
 
 Fills: Settings `Tool permissions:`, `Bypass` with their words and the date, or `Prompts`.
 
@@ -279,8 +293,9 @@ assumption came from (a file in `raw/`, a line of `profile.md`, or "default").
 
 | Item | Value | Source |
 |---|---|---|
-| Send authority | Approve each batch | stated, Q6 |
+| Send authority | Approve each batch | stated, Q5 |
 | Degree yes/no answer | Yes | assumed: B.Sc. completed 2019 in `raw/cv_2024.pdf` |
+| Tool permissions | Bypass | stated, Q6 |
 | CV mode | Tailored per role, general CV for Easy Apply | stated, Q7 |
 | Target | Backend and full-stack, mid-level | assumed: every role in `raw/cv_2024.pdf` is server-side |
 | Language of applications | English | assumed: CV and public profile are in English |
