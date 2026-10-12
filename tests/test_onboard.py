@@ -191,6 +191,29 @@ class PermissionsTests(unittest.TestCase):
              mock.patch.object(onboard.Path, "home", return_value=self.tmp / "home"):
             self.assertEqual(onboard.env_deny_rule(), "Read(//srv/jobs/people/**/.env)")
 
+    def test_launcher_scopes_bypass_to_the_workspace(self):
+        home = self.tmp / "home"
+        ws = home / "job-hunt"
+        with mock.patch.object(onboard.workspace, "load_workspace", return_value=ws), \
+             mock.patch.object(onboard.Path, "home", return_value=home):
+            target = onboard.set_launcher(True)
+            text = target.read_text()
+            self.assertEqual(target, home / ".local" / "bin" / "job-hunt")
+            self.assertIn(f'cd "{ws.resolve()}"', text)
+            self.assertIn('exec claude --dangerously-skip-permissions "$@"', text)
+            self.assertTrue(os.access(target, os.X_OK))
+            ws_settings = json.loads((ws / ".claude" / "settings.json").read_text())
+            self.assertEqual(ws_settings, {"permissions": {"deny": ["Read(~/job-hunt/people/**/.env)"]}})
+            self.assertFalse(self.settings.exists(), "the launcher must not touch user settings")
+            onboard.set_launcher(False)
+            self.assertFalse(target.exists())
+            self.assertEqual(json.loads((ws / ".claude" / "settings.json").read_text()), {})
+
+    def test_windows_launcher_text(self):
+        text = onboard.launcher_text(Path("C:/Users/h/job-hunt"), windows=True)
+        self.assertIn("claude --dangerously-skip-permissions %*\r\n", text)
+        self.assertTrue(text.startswith("@echo off\r\n"))
+
     def test_bypass_creates_missing_file(self):
         onboard.set_bypass(True)
         self.assertEqual(onboard.permission_mode(), "bypassPermissions")

@@ -184,11 +184,12 @@ Before pushing a branch, check its whole history too:
 **Can Claude Code apply to jobs for me automatically?**
 Yes. With this skill installed, Claude Code sources roles, writes a CV for each, and submits through
 the employer's form, by email, or through LinkedIn Easy Apply. How much it sends on its own is your
-choice at onboarding: approve each batch (the default), full autonomy, or drafts only. Separately,
-onboarding offers, with a warning, to turn on Claude Code's bypass permissions mode in your user
-settings, so a batch does not stop for a click on every command. It applies to every Claude Code
-session on the machine, adds a deny rule that keeps the file reader off your saved passwords, and
-`onboard.py permissions restore` undoes both.
+choice at onboarding: approve each batch (the default), full autonomy, or drafts only. After one
+batch you approve untouched, it offers once to send future batches on its own. Separately,
+onboarding offers, with a warning, a `job-hunt` command that starts Claude Code with permission
+prompts off for job-hunt sessions only, so a batch does not stop for a click on every command while
+every other Claude Code session stays as it was. It also blocks the file reader from your saved
+passwords, and `onboard.py permissions restore` undoes all of it.
 
 **Can a job posting trick the agent into leaking my passwords?**
 Postings are treated as data, never instructions, and an attempt is logged on that role's row and

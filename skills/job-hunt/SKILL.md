@@ -109,8 +109,8 @@ writes the icon. Use the same icon plus word when you report to the person.
    `python3 <skill-dir>/scripts/render.py <ws>/people/<p>/roles/<dir>` prints `pages 1`
    (`--cover` renders `cover-letter.html` when an employer asks for a letter).
 6. **Send** through the employer's own channel, as far as send authority allows
-   ([reference/sending.md](reference/sending.md)). Full autonomy: send. Approve each batch: present
-   the batch, send only what they approved. Drafts only: prepare everything, email applications as
+   ([reference/sending.md](reference/sending.md)). Full autonomy: send. Approve each batch: send
+   only what they approved (untouched approval: one-time upgrade offer, onboarding.md). Drafts only: prepare everything, email applications as
    Gmail drafts, defer each with what is left to do, and hand over. Anything the profile cannot
    answer (a salary figure, legal status, a live CAPTCHA) is deferred, not guessed:
    `$L defer --company Acme --role "Data Engineer" --url <url> --needs "salary figure"`.

@@ -175,37 +175,59 @@ Fills: Settings `Exclusions:`. Roles at those companies are never sourced.
 Fills: Settings `Send authority:`, with their exact words and the date, e.g.
 `Approve each batch. "show me the list first" (2026-10-12)`.
 
+**The upgrade offer.** When a person on "Approve each batch" approves a whole batch with no
+correction to any role or CV, offer once, in that batch's report: "Want me to send future batches
+without asking?" On an explicit yes, rewrite `Send authority:` with their words and the date. Never
+offer it again after a no, and never before one batch has gone through their review.
+
 ### 6b. Tool permissions
 
 Ask everyone, whatever they chose for send authority: without it, every `curl`, page load, and file
-write stops for a click, and a batch takes an afternoon of babysitting. Recommend turning it on, and
-put this warning in the question itself:
+write stops for a click, and a batch takes an afternoon of babysitting. Put the warning in the
+question itself:
 
-> ⚠️ **Bypass permissions** (recommended): from the next start, the agent runs commands, edits files,
-> and drives the browser without a permission prompt. Claude Code takes this mode only from its user
-> settings (`~/.claude/settings.json`), so it applies to **every Claude Code session on this
-> computer, in every folder**, not only the job hunt. A mistake, or an instruction hidden in a job
-> posting, then meets no prompt. It does not change who presses send: that stays as you chose. A
-> deny rule keeps the agent's file reader away from your saved passwords. Undo it any time with
-> `onboard.py permissions restore`. Turn it on?
+> ⚠️ Turning prompts off means the agent runs commands, edits files, and drives the browser without
+> asking. A mistake, or an instruction hidden in a job posting, then meets no prompt. It does not
+> change who presses send: that stays as you chose.
+>
+> - ✅ **A `job-hunt` command** (recommended): you start job-hunt sessions with `job-hunt` instead
+>   of `claude`. Only those sessions skip prompts; every other Claude Code session is unchanged.
+> - ⚠️ **Everywhere**: prompts go off in every Claude Code session on this computer, in every
+>   folder. Only if a separate command does not suit you.
+> - **Keep prompts.**
+>
+> Either way, the agent's file reader is blocked from your saved passwords, and
+> `onboard.py permissions restore` undoes it.
 
-Only on an explicit yes, and only after the workspace exists:
+Only on an explicit choice, and only after the workspace exists:
 
 ```bash
-python3 <skill-dir>/scripts/onboard.py permissions bypass    # prints: defaultMode bypassPermissions   <path>
+python3 <skill-dir>/scripts/onboard.py permissions launcher   # prints: launcher <path>
+python3 <skill-dir>/scripts/onboard.py permissions bypass     # "Everywhere" only
 ```
 
-It keeps every other setting, backs the file up once to `settings.json.job-hunt.bak`, and adds
-`Read(~/job-hunt/people/**/.env)` (the real workspace path) to `permissions.deny`. That rule blocks
-the Read tool and a plain `cat`; it is a guard rail, not a vault, since a script can still open the
-file. The real protection is that credentials never need to enter the conversation (`mailbox.py`
-reads the `.env` itself) and that nothing holding one can leave (`preflight.py`, `mailbox.py`). It
-takes effect on the next start of Claude Code, which then shows its own warning; that one is theirs
-to accept, so the script never pre-accepts it. Claude Code refuses this mode when run as root. If
-`onboard.py permissions status` already shows `bypassPermissions` (an earlier person turned it on),
-say so and skip the question. A no changes nothing else: every command then asks first.
+**`launcher`** writes `~/.local/bin/job-hunt` (Windows: `job-hunt.cmd` in
+`%LOCALAPPDATA%\Microsoft\WindowsApps`, which is on PATH by default). It starts Claude Code in the
+workspace with `--dangerously-skip-permissions`, which is the only per-session way: Claude Code
+ignores bypass mode in a project's own settings. It also adds `Read(~/job-hunt/people/**/.env)`
+(the real workspace path) to the workspace's `.claude/settings.json` and leaves the user settings
+alone. If the script notes that the folder is not on PATH, tell them the one line that adds it for
+their shell. The current session keeps its prompts: tell them to exit and start again with
+`job-hunt`.
 
-Fills: Settings `Tool permissions:`, `Bypass` with their words and the date, or `Prompts`.
+**`bypass`** sets the default mode in the user settings (`~/.claude/settings.json`) instead, with
+the same deny rule there, keeps every other key, and backs the file up once.
+
+The deny rule blocks the Read tool and a plain `cat`; it is a guard rail, not a vault, since a script
+can still open the file. The real protection is that credentials never need to enter the
+conversation (`mailbox.py` reads the `.env` itself) and that nothing holding one can leave
+(`preflight.py`, `mailbox.py`). Either way Claude Code shows its own bypass warning on the first
+start; that one is theirs to accept, so nothing pre-accepts it. Claude Code refuses bypass when run
+as root. If `onboard.py permissions status` already shows a launcher or `bypassPermissions` (an
+earlier person set it up), say so and skip the question.
+
+Fills: Settings `Tool permissions:`, `job-hunt command`, `Everywhere`, or `Prompts`, with their
+words and the date.
 
 ### 7. CV mode
 
@@ -295,7 +317,7 @@ assumption came from (a file in `raw/`, a line of `profile.md`, or "default").
 |---|---|---|
 | Send authority | Approve each batch | stated, Q5 |
 | Degree yes/no answer | Yes | assumed: B.Sc. completed 2019 in `raw/cv_2024.pdf` |
-| Tool permissions | Bypass | stated, Q6 |
+| Tool permissions | job-hunt command | stated, Q6 |
 | CV mode | Tailored per role, general CV for Easy Apply | stated, Q7 |
 | Target | Backend and full-stack, mid-level | assumed: every role in `raw/cv_2024.pdf` is server-side |
 | Language of applications | English | assumed: CV and public profile are in English |

@@ -4,7 +4,7 @@
     python3 scripts/onboard.py init <path>
     python3 scripts/onboard.py person "<Full Name>"
     python3 scripts/onboard.py list
-    python3 scripts/onboard.py permissions status|bypass|restore
+    python3 scripts/onboard.py permissions status|launcher|bypass|restore
 
 Naming: first name, lowercased -> people/hanna. If that directory is already
 taken by a DIFFERENT person, the new person becomes first_last AND the
@@ -16,12 +16,16 @@ under people/ resolves to its existing directory.
 Creates .env (owner-only on POSIX) from the template if absent, and never
 touches an existing one.
 
-permissions: Claude Code accepts bypassPermissions as a default mode only from
-its user settings file (project and local settings are ignored for it), so
-"bypass" writes permissions.defaultMode there, keeping every other key and a
-one-time backup, and adds a deny rule so Claude Code's Read tool (and plain cat)
-cannot open any person's .env. It never sets skipDangerousModePermissionPrompt:
-Claude Code's own confirmation stays the person's to accept.
+permissions: Claude Code grants bypassPermissions only from user settings or the
+--dangerously-skip-permissions flag; project and local settings are ignored for it.
+"launcher" (the default offer) writes a job-hunt command that starts Claude Code in
+the workspace with that flag, so only job-hunt sessions skip prompts, and puts a deny
+rule for every person's .env in the workspace's own .claude/settings.json.
+"bypass" (the fallback) sets the user-level default instead, for every session on
+the machine, with the same deny rule there. Both keep every other key and back a
+settings file up once. "restore" undoes both. Nothing here sets
+skipDangerousModePermissionPrompt: Claude Code's own confirmation stays the
+person's to accept.
 """
 from __future__ import annotations
 
@@ -217,20 +221,20 @@ def env_deny_rule() -> str | None:
         return f"Read(//{ws.as_posix().lstrip('/')}/people/**/.env)"
 
 
-def set_bypass(on: bool) -> str:
-    """Turn the user-level bypass default on (with the .env deny rule), or remove both.
-    Returns the new mode."""
-    path = claude_settings_path()
+def _apply(path: Path, on: bool, mode: str | None) -> str:
+    """Add (on) or remove the .env deny rule in one settings file; with mode, also
+    set or clear permissions.defaultMode. Returns the resulting default mode."""
     data = _read_settings(path)
     perms = data.setdefault("permissions", {})
     rule = env_deny_rule()
     deny = perms.get("deny", [])
     if on:
-        perms["defaultMode"] = BYPASS
+        if mode:
+            perms["defaultMode"] = mode
         if rule and rule not in deny:
             perms["deny"] = deny + [rule]
     else:
-        if perms.get("defaultMode") == BYPASS:
+        if mode and perms.get("defaultMode") == mode:
             del perms["defaultMode"]
         if rule in deny:
             deny.remove(rule)
@@ -238,8 +242,60 @@ def set_bypass(on: bool) -> str:
                 del perms["deny"]
     if not perms:
         del data["permissions"]
-    _write_settings(path, data)
+    if data or path.exists():
+        _write_settings(path, data)
     return perms.get("defaultMode", "default")
+
+
+def set_bypass(on: bool) -> str:
+    """Turn the user-level bypass default on (with the .env deny rule), or remove both.
+    Returns the new mode."""
+    return _apply(claude_settings_path(), on, BYPASS)
+
+
+LAUNCHER = "job-hunt"
+
+
+def launcher_path() -> Path:
+    if os.name == "nt":
+        base = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local")))
+        return base / "Microsoft" / "WindowsApps" / f"{LAUNCHER}.cmd"
+    return Path.home() / ".local" / "bin" / LAUNCHER
+
+
+def launcher_text(ws: Path, windows: bool) -> str:
+    if windows:
+        return (
+            "@echo off\r\n"
+            "rem job-hunt: Claude Code in the workspace, prompts off for this session only.\r\n"
+            f'cd /d "{ws}" || exit /b 1\r\n'
+            "claude --dangerously-skip-permissions %*\r\n"
+        )
+    return (
+        "#!/bin/sh\n"
+        "# job-hunt: Claude Code in the workspace, prompts off for this session only.\n"
+        f'cd "{ws}" || exit 1\n'
+        'exec claude --dangerously-skip-permissions "$@"\n'
+    )
+
+
+def set_launcher(on: bool) -> Path | None:
+    """Write (or remove) the job-hunt command and the workspace's .env deny rule.
+    Returns the launcher path when written."""
+    ws = workspace.load_workspace()
+    if ws is None:
+        raise ValueError("no workspace yet: run onboard.py init <path> first")
+    target = launcher_path()
+    _apply(ws / ".claude" / "settings.json", on, None)
+    if not on:
+        if target.exists():
+            target.unlink()
+        return None
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(launcher_text(ws.resolve(), os.name == "nt"), encoding="utf-8", newline="")
+    if os.name != "nt":
+        os.chmod(target, 0o755)
+    return target
 
 
 def _require_workspace() -> Path:
@@ -264,7 +320,7 @@ def main(argv=None) -> int:
     p_person.add_argument("full_name")
     sub.add_parser("list")
     p_perm = sub.add_parser("permissions")
-    p_perm.add_argument("action", choices=["status", "bypass", "restore"])
+    p_perm.add_argument("action", choices=["status", "launcher", "bypass", "restore"])
     args = parser.parse_args(argv)
 
     if args.cmd == "status":
@@ -301,17 +357,32 @@ def main(argv=None) -> int:
     if args.cmd == "permissions":
         path = claude_settings_path()
         try:
+            if args.action == "launcher":
+                target = set_launcher(True)
+                print(f"launcher {target}")
+                on_path = str(target.parent) in os.environ.get("PATH", "").split(os.pathsep)
+                if not on_path:
+                    print(f"note: {target.parent} is not on PATH; add it, or run {target} directly",
+                          file=sys.stderr)
+                if hasattr(os, "geteuid") and os.geteuid() == 0:
+                    print("warning: Claude Code refuses bypass mode when run as root", file=sys.stderr)
+                print(f"start job-hunt sessions with: {LAUNCHER}", file=sys.stderr)
+                return 0
             if args.action == "status":
                 mode = permission_mode() or "default"
             else:
                 existed = path.exists()
                 mode = set_bypass(args.action == "bypass")
-                if not existed:
+                if args.action == "restore" and workspace.load_workspace() is not None:
+                    set_launcher(False)
+                if not existed and args.action == "bypass":
                     print("no earlier settings file, so there was nothing to back up", file=sys.stderr)
         except (ValueError, json.JSONDecodeError) as e:
             print(f"onboard: cannot use {path}: {e}", file=sys.stderr)
             return 3
         print(f"defaultMode {mode}   {path}")
+        lp = launcher_path()
+        print(f"launcher {lp if lp.exists() else 'none'}")
         if mode == BYPASS:
             if hasattr(os, "geteuid") and os.geteuid() == 0:
                 print("warning: Claude Code refuses bypass mode when run as root", file=sys.stderr)
