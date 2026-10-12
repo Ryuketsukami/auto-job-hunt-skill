@@ -180,6 +180,13 @@ for the person.
   contractor or invoicing status, work rights in another country, and anything else the file does
   not hold: discard the draft, `ledger.py --person <p> defer` the role with `--needs` naming the question, and
   ask. Do not guess.
+- **The Easy Apply control can be a button or a link.** Both carry the name "Easy Apply to this
+  job". Match either role before concluding the posting has no Easy Apply.
+- **There is a daily Easy Apply cap.** After a few dozen submissions in one day, clicking Easy Apply
+  opens "You reached today's Easy Apply limit" instead of the form. Stop sending for the day, defer
+  the remaining fits with `--needs "LinkedIn daily Easy Apply limit reset"`, and resume the next
+  day. Heavy browsing on the same day can also stop job descriptions from loading (only loading
+  placeholders appear). Pause when that happens rather than reloading.
 - **Hash the stored resume before the first send.** The resume radio list shows names and dates
   only. Fetch the stored file from the page and compare its SHA-256 with the verified build.
 - **Confirmation has two shapes.** Usually a dialog headed "Your application was sent to
