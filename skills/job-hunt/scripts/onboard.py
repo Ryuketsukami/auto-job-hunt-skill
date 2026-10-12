@@ -304,7 +304,10 @@ def main(argv=None) -> int:
             if args.action == "status":
                 mode = permission_mode() or "default"
             else:
+                existed = path.exists()
                 mode = set_bypass(args.action == "bypass")
+                if not existed:
+                    print("no earlier settings file, so there was nothing to back up", file=sys.stderr)
         except (ValueError, json.JSONDecodeError) as e:
             print(f"onboard: cannot use {path}: {e}", file=sys.stderr)
             return 3
