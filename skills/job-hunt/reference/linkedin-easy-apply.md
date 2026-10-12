@@ -85,6 +85,30 @@ Use a dedicated session name when more than one operator is active:
 python3 <skill-dir>/scripts/linkedin_easy_apply.py --session role-123 attach
 ```
 
+## Is the person signed in?
+
+Check before the first Easy Apply action of every session, and again whenever a page looks like a
+login screen:
+
+```bash
+python3 <skill-dir>/scripts/linkedin_easy_apply.py session    # LINKEDIN_SESSION <state>
+```
+
+| State (exit) | Means | Tell the person |
+|---|---|---|
+| `signed-in` (0) | the attached Chrome is on their feed | nothing; carry on |
+| `signed-out` (3) | LinkedIn sent the browser to a login or sign-up page | "Open Chrome, the profile with the Playwright MCP Bridge, sign in to linkedin.com yourself, and tell me when you're in." |
+| `challenge` (4) | LinkedIn is showing a security check | "LinkedIn wants to verify it's you. Please finish that check in Chrome." Never touch it. |
+| `unreachable` (5) | no attached browser | run `doctor`; say exactly what is missing (Chrome not open, extension not installed, CLI missing), or run `attach` |
+
+Signing in is always the person's own step: never ask for, type, or store the LinkedIn password or a
+one-time code. Run `session` again after they say they are in, and only continue on `signed-in`.
+
+**Mid-batch, a missing session never stops the other channels.** Employer forms and email go out as
+usual; each Easy Apply role is deferred with
+`--needs "sign in to LinkedIn in Chrome, then I send it"`, and the batch report asks once. When they
+confirm, re-check and send the deferred roles.
+
 ## Screenshot, analyse, act loop
 
 Navigate only to a LinkedIn URL; the controller rejects other hosts.

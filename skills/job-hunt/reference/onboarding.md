@@ -271,6 +271,9 @@ Forms ask these constantly, and a guess is never acceptable:
 - **LinkedIn Easy Apply module** (optional): a local Chrome extension plus the Playwright CLI,
   driving their own logged-in session. Needs their explicit written authority for both the channel
   and submission. See [linkedin-easy-apply.md](linkedin-easy-apply.md).
+  On a yes, run `doctor`, `attach`, then `session` (see the table in that file). If the result is
+  not `signed-in`, ask them to sign in to linkedin.com in that Chrome now, while the rest of
+  onboarding goes on, and check again before the summary. Never ask for the password.
   Fills: Settings `LinkedIn Easy Apply:`, with their words and the date.
 
 ### 10. Batch size and cadence

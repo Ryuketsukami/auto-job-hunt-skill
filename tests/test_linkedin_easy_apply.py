@@ -4,6 +4,7 @@ import argparse
 import base64
 import contextlib
 import io
+import json
 import sys
 import tempfile
 import unittest
@@ -12,6 +13,7 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "skills/job-hunt/scripts"))
 import linkedin_easy_apply
+import linkedin_easy_apply as lea
 from linkedin_easy_apply import (
     UsageError,
     attach_script,
@@ -151,6 +153,41 @@ class LocalModeTests(unittest.TestCase):
         self.assertIn("role: button", printed)
         self.assertIn("name: Submit", printed)
 
+
+
+class SessionCheckTests(unittest.TestCase):
+    def probe(self, url, title="", nav=False):
+        blob = json.dumps(json.dumps({"url": url, "title": title, "nav": nav}))
+        return f"### Result\n{blob}\n### Ran Playwright code"
+
+    def test_feed_is_signed_in(self):
+        self.assertEqual(lea.classify_session(self.probe("https://www.linkedin.com/feed/", "(2) Feed | LinkedIn")), "signed-in")
+
+    def test_login_redirect_is_signed_out(self):
+        for url in ("https://www.linkedin.com/login?session_redirect=x", "https://www.linkedin.com/authwall?x",
+                    "https://www.linkedin.com/uas/login"):
+            self.assertEqual(lea.classify_session(self.probe(url)), "signed-out", url)
+
+    def test_guest_home_page_is_signed_out(self):
+        self.assertEqual(lea.classify_session(self.probe("https://www.linkedin.com/", "LinkedIn: Log In or Sign Up")), "signed-out")
+
+    def test_checkpoint_is_challenge(self):
+        self.assertEqual(lea.classify_session(self.probe("https://www.linkedin.com/checkpoint/challenge/x")), "challenge")
+
+    def test_no_probe_output_is_unreachable(self):
+        self.assertEqual(lea.classify_session("The browser 'x' is not open, please run open first"), "unreachable")
+
+    def test_main_session_exit_codes(self):
+        for state, code in lea.SESSION_EXIT.items():
+            with mock.patch.object(lea, "session_check", return_value=state), \
+                 contextlib.redirect_stdout(io.StringIO()) as out:
+                self.assertEqual(lea.main(["session"]), code)
+            self.assertIn(f"LINKEDIN_SESSION {state}", out.getvalue())
+
+    def test_session_check_short_circuits_when_browser_is_not_open(self):
+        with mock.patch.object(lea, "run_capture", return_value=(1, "The browser is not open")) as rc:
+            self.assertEqual(lea.session_check(None, "s1"), "unreachable")
+        self.assertEqual(rc.call_count, 1)
 
 if __name__ == "__main__":
     unittest.main()

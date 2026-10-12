@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Drive one consented LinkedIn Easy Apply session through Playwright CLI.
 
+`session` reports whether the attached Chrome is signed in to LinkedIn: it prints
+LINKEDIN_SESSION signed-in (exit 0), signed-out (exit 3), challenge (exit 4), or
+unreachable (exit 5, no browser to drive). Run it before any Easy Apply work.
+
 With no --runner (and no LINKEDIN_RUNNER in the environment) the CLI runs locally,
 against the desktop session this process is already in. Pass --runner user@host, or
 set LINKEDIN_RUNNER, to drive a remote machine over SSH instead.
@@ -228,6 +232,59 @@ def inline_snapshot_text(output: str) -> str | None:
         return None
 
 
+SESSION_PROBE_URL = "https://www.linkedin.com/feed/"
+SESSION_PROBE = (
+    "() => JSON.stringify({url: location.href, title: document.title, "
+    "nav: !!document.querySelector('#global-nav, nav.global-nav, [data-test-global-nav]')})"
+)
+SESSION_EXIT = {"signed-in": 0, "signed-out": 3, "challenge": 4, "unreachable": 5}
+
+
+def classify_session(output: str) -> str:
+    """Read the probe's JSON out of the CLI output. Only a signed-in visitor stays on /feed/:
+    logged-out ones land on /login, /uas/login, /authwall, /signup or the guest home page
+    ("Log In or Sign Up"); a security check lands on /checkpoint/."""
+    match = re.search(r'\{\\?"url\\?".*?\}', output, re.S)
+    if not match:
+        return "unreachable"
+    blob = match.group(0).replace('\\"', '"')
+    url = (re.search(r'"url":\s*"([^"]*)"', blob) or [None, ""])[1].lower()
+    title = (re.search(r'"title":\s*"([^"]*)"', blob) or [None, ""])[1].lower()
+    nav = '"nav":true' in blob.replace(" ", "")
+    if "/checkpoint/" in url:
+        return "challenge"
+    if any(k in url for k in ("/login", "/uas/", "/authwall", "/signup")) or "sign in" in title or "log in" in title:
+        return "signed-out"
+    if "linkedin.com" in url and (nav or "/feed" in url):
+        return "signed-in"
+    return "signed-out" if "linkedin.com" in url else "unreachable"
+
+
+def run_capture(runner: str | None, cli_args: list[str]) -> tuple[int, str]:
+    if runner:
+        script = f"{CLI_PREAMBLE}; $out = & node $cli " + " ".join(_ps_literal(a) for a in cli_args)
+        script += " 2>&1 | Out-String; $code = $LASTEXITCODE; $out; exit $code"
+        cmd = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", require_runner(runner),
+               encoded_powershell(script)]
+    else:
+        cmd = local_command(cli_args)
+    try:
+        done = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                              check=False, **local_subprocess_kwargs())
+    except OSError as exc:
+        return 127, str(exc)
+    return done.returncode, done.stdout + done.stderr
+
+
+def session_check(runner: str | None, session: str) -> str:
+    prefix = [f"-s={require_session(session)}"]
+    code, out = run_capture(runner, prefix + ["goto", SESSION_PROBE_URL])
+    if code != 0 or "is not open" in out:
+        return "unreachable"
+    _, out = run_capture(runner, prefix + ["eval", SESSION_PROBE])
+    return classify_session(out)
+
+
 def run_local(cli_args: list[str], inline_snapshot: bool) -> int:
     completed = subprocess.run(
         local_command(cli_args), capture_output=True, text=True, check=False, **local_subprocess_kwargs()
@@ -249,7 +306,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--runner", default=os.environ.get("LINKEDIN_RUNNER"))
     result.add_argument("--session", default=SESSION_DEFAULT)
     commands = result.add_subparsers(dest="command", required=True)
-    for name in ("doctor", "attach", "snapshot", "text", "tabs", "detach"):
+    for name in ("doctor", "attach", "session", "snapshot", "text", "tabs", "detach"):
         commands.add_parser(name)
     goto = commands.add_parser("goto")
     goto.add_argument("url")
@@ -272,6 +329,10 @@ def main(argv: list[str] | None = None) -> int:
     workspace.utf8_stdio()
     args = parser().parse_args(argv)
     try:
+        if args.command == "session":
+            state = session_check(args.runner, args.session)
+            print(f"LINKEDIN_SESSION {state}")
+            return SESSION_EXIT[state]
         if args.runner:
             require_runner(args.runner)
             if args.command == "attach":
