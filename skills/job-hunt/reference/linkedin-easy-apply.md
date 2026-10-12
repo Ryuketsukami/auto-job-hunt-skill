@@ -143,7 +143,11 @@ LinkedIn account and check it by hash first. When a fresh file must go in, the w
 (verified on GitHub's uploader, 2026-10-11) is in-page: `fetch` the file from an https URL the page
 can read, wrap it in a `File` inside a `DataTransfer`, assign it to the `input[type=file]`, and
 dispatch `change`; then verify the upload took on the site itself, not by the input's `files` count,
-which the site's handler may reset. A local path is not reachable this way.
+which the site's handler may reset. A local path is not reachable this way. When no https copy
+exists, stream the file in as base64: the controller's command line on Windows tops out near 8,000
+characters, so append chunks of about 1,800 characters to `sessionStorage` (page globals do not
+survive between `eval` calls), then decode, wrap in a `File`, and attach. Verified 2026-10-12 on a
+careers form whose cookie banner also had to be dismissed before the submit click landed.
 
 Do not pass passwords, one-time codes,
 recovery answers, or other credentials to `fill`. If LinkedIn requests any of them, park the form
