@@ -1,6 +1,7 @@
 """Tests for onboard.py: first-run detection and per-person scaffold."""
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -139,6 +140,45 @@ class OnboardTests(unittest.TestCase):
             ws = onboard.init(Path("~/ws"))
         self.assertEqual(ws, (home / "ws").resolve())
         self.assertTrue((home / "ws" / "people").is_dir())
+
+
+class PermissionsTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.env = mock.patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": str(self.tmp)}, clear=False)
+        self.env.start()
+        self.settings = self.tmp / "settings.json"
+
+    def tearDown(self):
+        self.env.stop()
+
+    def test_bypass_keeps_other_keys_and_backs_up(self):
+        self.settings.write_text('{"model": "opus", "permissions": {"allow": ["Bash(ls)"]}}')
+        self.assertEqual(onboard.set_bypass(True), "bypassPermissions")
+        data = json.loads(self.settings.read_text())
+        self.assertEqual(data["model"], "opus")
+        self.assertEqual(data["permissions"], {"allow": ["Bash(ls)"], "defaultMode": "bypassPermissions"})
+        self.assertNotIn("skipDangerousModePermissionPrompt", data)
+        backup = json.loads((self.tmp / "settings.json.job-hunt.bak").read_text())
+        self.assertNotIn("defaultMode", backup["permissions"])
+
+    def test_restore_removes_only_bypass(self):
+        self.settings.write_text('{"permissions": {"defaultMode": "bypassPermissions"}}')
+        self.assertEqual(onboard.set_bypass(False), "default")
+        self.assertEqual(json.loads(self.settings.read_text()), {})
+        self.settings.write_text('{"permissions": {"defaultMode": "acceptEdits"}}')
+        self.assertEqual(onboard.set_bypass(False), "acceptEdits")
+
+    def test_bypass_creates_missing_file(self):
+        onboard.set_bypass(True)
+        self.assertEqual(onboard.permission_mode(), "bypassPermissions")
+
+    def test_cli_rejects_non_object_settings(self):
+        self.settings.write_text("[]")
+        r = subprocess.run([sys.executable, ONBOARD_SCRIPT, "permissions", "bypass"],
+                           capture_output=True, text=True)
+        self.assertEqual(r.returncode, 3)
+        self.assertEqual(self.settings.read_text(), "[]")
 
 
 if __name__ == "__main__":

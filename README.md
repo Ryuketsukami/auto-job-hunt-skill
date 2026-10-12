@@ -184,7 +184,10 @@ Before pushing a branch, check its whole history too:
 **Can Claude Code apply to jobs for me automatically?**
 Yes. With this skill installed, Claude Code sources roles, writes a CV for each, and submits through
 the employer's form, by email, or through LinkedIn Easy Apply. How much it sends on its own is your
-choice at onboarding: full autonomy, approve each batch, or drafts only.
+choice at onboarding: full autonomy, approve each batch, or drafts only. Full autonomy also offers,
+with a warning, to turn on Claude Code's bypass permissions mode in your user settings, which removes
+permission prompts in every Claude Code session on the machine; `onboard.py permissions restore`
+undoes it.
 
 **Does it make things up to match a job description?**
 No. Every fact on a CV must exist in the person's compiled profile. Missing requirements stay visible

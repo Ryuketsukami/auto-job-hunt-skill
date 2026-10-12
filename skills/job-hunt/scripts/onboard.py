@@ -4,6 +4,7 @@
     python3 scripts/onboard.py init <path>
     python3 scripts/onboard.py person "<Full Name>"
     python3 scripts/onboard.py list
+    python3 scripts/onboard.py permissions status|bypass|restore
 
 Naming: first name, lowercased -> people/hanna. If that directory is already
 taken by a DIFFERENT person, the new person becomes first_last AND the
@@ -14,6 +15,12 @@ under people/ resolves to its existing directory.
 
 Creates .env (owner-only on POSIX) from the template if absent, and never
 touches an existing one.
+
+permissions: Claude Code accepts bypassPermissions as a default mode only from
+its user settings file (project and local settings are ignored for it), so
+"bypass" writes permissions.defaultMode there, keeping every other key and a
+one-time backup. It never sets skipDangerousModePermissionPrompt: Claude Code's
+own confirmation stays the person's to accept.
 """
 from __future__ import annotations
 
@@ -167,6 +174,50 @@ def create_person(ws: Path, full_name: str, on_migrate=None) -> tuple[str, Path]
     return "created", target
 
 
+BYPASS = "bypassPermissions"
+
+
+def claude_settings_path() -> Path:
+    base = os.environ.get("CLAUDE_CONFIG_DIR") or str(Path.home() / ".claude")
+    return Path(base).expanduser() / "settings.json"
+
+
+def _read_settings(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8") or "{}")
+    if not isinstance(data, dict):
+        raise ValueError(f"{path} does not hold a JSON object")
+    return data
+
+
+def _write_settings(path: Path, data: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    backup = path.with_name(path.name + ".job-hunt.bak")
+    if path.exists() and not backup.exists():
+        shutil.copy2(path, backup)
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
+def permission_mode() -> str | None:
+    return _read_settings(claude_settings_path()).get("permissions", {}).get("defaultMode")
+
+
+def set_bypass(on: bool) -> str:
+    """Turn the user-level bypass default on, or remove it. Returns the new mode."""
+    path = claude_settings_path()
+    data = _read_settings(path)
+    perms = data.setdefault("permissions", {})
+    if on:
+        perms["defaultMode"] = BYPASS
+    elif perms.get("defaultMode") == BYPASS:
+        del perms["defaultMode"]
+    if not perms:
+        del data["permissions"]
+    _write_settings(path, data)
+    return perms.get("defaultMode", "default")
+
+
 def _require_workspace() -> Path:
     ws = workspace.load_workspace()
     if ws is None:
@@ -188,6 +239,8 @@ def main(argv=None) -> int:
     p_person = sub.add_parser("person")
     p_person.add_argument("full_name")
     sub.add_parser("list")
+    p_perm = sub.add_parser("permissions")
+    p_perm.add_argument("action", choices=["status", "bypass", "restore"])
     args = parser.parse_args(argv)
 
     if args.cmd == "status":
@@ -219,6 +272,23 @@ def main(argv=None) -> int:
         if people_dir.is_dir():
             for d in sorted(p for p in people_dir.iterdir() if p.is_dir()):
                 print(f"{d.name:20} {name_of(d) or '(no .person marker)'}")
+        return 0
+
+    if args.cmd == "permissions":
+        path = claude_settings_path()
+        try:
+            if args.action == "status":
+                mode = permission_mode() or "default"
+            else:
+                mode = set_bypass(args.action == "bypass")
+        except (ValueError, json.JSONDecodeError) as e:
+            print(f"onboard: cannot use {path}: {e}", file=sys.stderr)
+            return 3
+        print(f"defaultMode {mode}   {path}")
+        if mode == BYPASS:
+            if hasattr(os, "geteuid") and os.geteuid() == 0:
+                print("warning: Claude Code refuses bypass mode when run as root", file=sys.stderr)
+            print("takes effect the next time Claude Code starts", file=sys.stderr)
         return 0
 
     return 2

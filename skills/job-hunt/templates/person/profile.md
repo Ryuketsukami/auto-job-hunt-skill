@@ -21,6 +21,7 @@ Last compiled: {{DATE}} from {{N}} files in `raw/`
 <!-- Written by onboarding (reference/onboarding.md). Read before every batch. -->
 
 - Send authority:
+- Tool permissions:
 - CV mode:
 - Degree yes/no answer:
 - Salary fields:
