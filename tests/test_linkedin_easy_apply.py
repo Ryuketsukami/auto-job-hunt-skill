@@ -171,6 +171,10 @@ class SessionCheckTests(unittest.TestCase):
     def test_guest_home_page_is_signed_out(self):
         self.assertEqual(lea.classify_session(self.probe("https://www.linkedin.com/", "LinkedIn: Log In or Sign Up")), "signed-out")
 
+    def test_password_box_under_feed_url_is_signed_out(self):
+        blob = json.dumps(json.dumps({"url": "https://www.linkedin.com/feed/", "title": "LinkedIn", "nav": False, "pw": True}))
+        self.assertEqual(lea.classify_session(f"### Result\n{blob}"), "signed-out")
+
     def test_checkpoint_is_challenge(self):
         self.assertEqual(lea.classify_session(self.probe("https://www.linkedin.com/checkpoint/challenge/x")), "challenge")
 

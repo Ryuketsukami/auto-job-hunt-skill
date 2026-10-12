@@ -235,7 +235,8 @@ def inline_snapshot_text(output: str) -> str | None:
 SESSION_PROBE_URL = "https://www.linkedin.com/feed/"
 SESSION_PROBE = (
     "() => JSON.stringify({url: location.href, title: document.title, "
-    "nav: !!document.querySelector('#global-nav, nav.global-nav, [data-test-global-nav]')})"
+    "nav: !!document.querySelector('#global-nav, nav.global-nav, [data-test-global-nav]'), "
+    "pw: !!document.querySelector('input[type=password]')})"
 )
 SESSION_EXIT = {"signed-in": 0, "signed-out": 3, "challenge": 4, "unreachable": 5}
 
@@ -253,6 +254,9 @@ def classify_session(output: str) -> str:
     nav = '"nav":true' in blob.replace(" ", "")
     if "/checkpoint/" in url:
         return "challenge"
+    if '"pw":true' in blob.replace(" ", ""):
+        # A password box on the page outranks the URL: a sign-in form can render under /feed/.
+        return "signed-out"
     if any(k in url for k in ("/login", "/uas/", "/authwall", "/signup")) or "sign in" in title or "log in" in title:
         return "signed-out"
     if "linkedin.com" in url and (nav or "/feed" in url):

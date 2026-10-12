@@ -47,7 +47,7 @@ move to `first_last` and the script prints the move.
 
 ## Workspace
 
-Data lives outside the skill, because skill files are replaced on update.
+Data lives outside the skill: skill files are replaced on update, so never edit them; lessons go in the report.
 
 ```
 <ws>/people/<p>/
