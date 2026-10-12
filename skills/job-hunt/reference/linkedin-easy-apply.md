@@ -164,7 +164,8 @@ for the person.
   nobody authorised.
 - **Saved answers prefill.** LinkedIn reuses earlier answers (years with Python, React, and so on)
   and pre-selects the last resume used. Check every prefill against `profile.md`; a prefill is not a
-  fact.
+  fact. That includes the **cover letter box: it can arrive holding the letter written for the
+  previous company**, addressed to them by name. Replace it or clear it on every form.
 - **Education is pulled from the LinkedIn profile, not from `profile.md`.** It can carry wrong
   years, a school of "N/A", or an empty entry whose required School field blocks Next. Correct
   entries to the compiled facts in the form, or use "Delete education" then "Remove from your
