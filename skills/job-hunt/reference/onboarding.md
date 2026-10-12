@@ -19,6 +19,11 @@ Ask in **rounds of at most 5 questions**. Each question carries your recommendat
 the opening request and their raw material did not already answer, but keep the numbering below so
 an answer by number is never ambiguous.
 
+**The CV comes first.** If the opening request carried no CV or other raw material, the first round
+asks for it (question 1), together with question 0 if the person is not yet named. Nothing else is
+asked until it arrives or they say they have none, because it answers most of what follows. Once it
+is in, save it to `raw/`, compile, and fill every field it already holds before the next round.
+
 **Fixed-choice questions go through the `AskUserQuestion` picker** when your harness has it (Claude
 Code does). Put the recommended option first and mark it in its label, e.g. "Tailored per role,
 general CV for Easy Apply (recommended)". If the picker fits fewer questions per call than the round holds, split the round
@@ -75,21 +80,38 @@ python3 <skill-dir>/scripts/onboard.py person "Hanna Levi"   # prints: created  
 Fills: the folder name and the profile title. If the script prints a `migrated` line, tell the
 operator which folder moved.
 
-### 1. Contact
-
-Name as it should appear on a CV, email, phone, city (a city, never a street address), and any
-public profile or portfolio URL they are happy to have on the CV.
-
-Fills: `## Contact` (Name, Email, Phone, Location, Public profile / portfolio).
-
-### 2. Raw material
+### 1. Raw material
 
 Any existing CV however old, a LinkedIn data export or the text of their profile, anything else:
 certificates, a portfolio, notes in their own words about one thing they built and what changed
 because of it. Every file lands in `raw/` untouched, named for what it is and when it arrived.
 
+If they have nothing written down, that is fine: ask for their work history in prose instead
+(employer, title, dates, what they built, what changed because of it), one job at a time.
+
 Fills: `raw/`, and then the compiled body of `profile.md` (see [profile.md](profile.md)). Compile
-before asking round 2, so later questions can be skipped when the material answers them.
+before asking the next round, so later questions can be skipped when the material answers them.
+
+### 2. Contact
+
+Name as it should appear on a CV, email, phone, city (a city, never a street address), and any
+public profile or portfolio URL they are happy to have on the CV.
+
+**Take what the raw material already holds and do not ask for it again.** Ask only for fields that
+are missing or broken, and check each one before trusting it:
+
+| Field | Broken when |
+|---|---|
+| Email | not a well-formed address, or a domain that does not resolve |
+| Phone | no country code, wrong digit count for the country |
+| URL (GitHub, portfolio) | it does not load (404, dead domain, redirect to a home page), or the page is someone else's |
+| LinkedIn URL | not of the form `linkedin.com/in/<slug>` (LinkedIn walls logged-out visitors, so a login redirect alone proves nothing) |
+| Location | a street address (keep the city only) |
+
+Name the broken field and why in the round ("the GitHub link in your CV returns 404: what is the
+right one?"). Fields taken from the CV go in the summary as assumed, with the file they came from.
+
+Fills: `## Contact` (Name, Email, Phone, Location, Public profile / portfolio).
 
 ### 3. Target roles and seniority
 

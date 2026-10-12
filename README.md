@@ -73,8 +73,9 @@ it to run a search; it reads the skill before doing anything else.
 
 Ask for a job search in plain language: "find Hanna some backend roles," "job hunt for Daniel,"
 "here's my CV, find me work." The first thing that happens is a grill-style interview, in rounds of
-at most five questions, each with a recommended answer: contact details, raw material (an old CV,
-a LinkedIn export, notes), target roles and seniority, location and arrangement, companies to
+at most five questions, each with a recommended answer. It asks for their CV first if the request
+did not include one (an old CV, a LinkedIn export, notes), then only for contact details the CV is
+missing or has broken (a dead GitHub link, a phone with no country code), then target roles and seniority, location and arrangement, companies to
 exclude, who gets to press send, how CVs should be generated, fixed answers to recurring form
 questions (degree wording, salary, work authorisation), which channels to use, and batch size and
 cadence. It ends with one summary table marking every item as stated or assumed, for the person to
