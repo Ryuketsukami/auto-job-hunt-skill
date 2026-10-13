@@ -70,6 +70,11 @@ def connect_imap(cfg: dict[str, str]) -> imaplib.IMAP4_SSL:
         # The server echoes the credential in some failure bodies. Never surface it.
         sys.exit("mailbox: IMAP login rejected. Check the address and that the app password "
                  "is still valid; it may have been revoked.")
+    # imaplib sends ASCII only until UTF-8 is enabled, so a Hebrew search would crash.
+    # Refresh the post-login capabilities first; Gmail advertises ENABLE only after login.
+    M.capabilities = tuple(M.capability()[1][-1].decode().upper().split())
+    if "UTF8=ACCEPT" in M.capabilities:
+        M.enable("UTF8=ACCEPT")
     M.select("INBOX")
     return M
 
