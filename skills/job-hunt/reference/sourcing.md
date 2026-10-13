@@ -7,6 +7,13 @@ Before any role is considered: `ledger.py find --person <p> --url <url>` (and `-
 for the same role under another URL). A hit in either CSV means the role was already decided. Skip
 it. The ledger also refuses a duplicate URL on `add` and `defer`.
 
+**Search vocabulary.** If `people/<p>/target-titles.csv` exists, it is the list of titles to search
+for, one row per title family with synonyms joined by ` / `. Its columns `entry level`, `junior`,
+`medium level`, `senior`, and `tech lead` hold `V` (search and keep at that level) or `X` (skip).
+Search every title in it, not only the obvious ones: emerging titles such as Forward Deployed
+Engineer or Evals Engineer surface roles a plain "AI engineer" query misses. Build it with the
+person at onboarding or when they widen the search, and edit it rather than re-deriving it.
+
 Regional boards and their quirks live in the region files:
 [regions/israel.md](regions/israel.md) (Drushim, AllJobs, Hebrew postings, local boards).
 
