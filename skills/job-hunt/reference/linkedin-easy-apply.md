@@ -149,6 +149,15 @@ characters, so append chunks of about 1,800 characters to `sessionStorage` (page
 survive between `eval` calls), then decode, wrap in a `File`, and attach. Verified 2026-10-12 on a
 careers form whose cookie banner also had to be dismissed before the submit click landed.
 
+**On LinkedIn itself, never pick a file input by searching the page.** The open messaging
+overlay keeps its own attachment inputs (in shadow DOM), and setting a file on one attaches the CV to
+an unsent message draft in whatever conversation is open. The Easy Apply resume input does not exist
+until "Upload resume" is clicked. The working route (verified 2026-10-14): temporarily wrap
+`HTMLInputElement.prototype.click` so a `type=file` click stores the element instead of opening a
+chooser, click "Upload resume" in the dialog, set the `File` on the captured input, dispatch
+`input` and `change`, restore the original `click`, then confirm the resume list shows the new file
+dated today and checked, and that no attachment sits in the messaging overlay.
+
 Do not pass passwords, one-time codes,
 recovery answers, or other credentials to `fill`. If LinkedIn requests any of them, park the form
 for the person.
