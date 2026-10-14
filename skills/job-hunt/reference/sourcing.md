@@ -146,6 +146,13 @@ invent one, and do not quietly widen one because a batch came up short.
 | **Hard qualifiers** | Settings, `profile.md` | A degree, a clearance, a licence, a language. If the posting makes it a knockout and they do not have it, the role is dropped with a reason. |
 | **Already decided** | both CSVs | Any row for the role excludes it. Checked first, every time. |
 
+**A posting date window is not a liveness check.** Large employers keep a role open for months: a
+posting from ten weeks ago can still be live and unfilled. Recent-only searches (LinkedIn `f_TPR`,
+"past week") are right for a daily sweep, but the first sweep for a person, and any sweep after a
+new title enters their vocabulary, also runs once with no date filter for their target titles at
+large companies, and checks the employer's own careers page for liveness. A strong-fit role at a
+big company was missed exactly this way, found by the person instead.
+
 **Every stretch role is labelled as a stretch** in the ledger (`--stretch "asks 6+ yrs"`) and in
 every report, at every setting.
 
