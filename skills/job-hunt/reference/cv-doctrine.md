@@ -278,3 +278,10 @@ None goes out by default. One goes out only when the employer explicitly asks, a
 
 Write it as `cover-letter.html` in the role directory; it goes through the same preflight, and
 `render.py --cover <dir>` prints it. Keep only letters that were actually sent.
+
+## Letter-spacing breaks ATS text extraction
+
+Wide CSS `letter-spacing` on uppercase headings makes the PDF text layer read "E D U C AT I O N" and
+"F U L L S TA C K" (checked with `pdftotext`, 2026-10-15). Keyword matchers then miss the section
+names and the headline. Keep `letter-spacing` at 0 on headings and the headline; check a finished
+PDF with `pdftotext <pdf> - | head` before sending.
