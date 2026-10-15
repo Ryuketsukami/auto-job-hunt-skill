@@ -495,4 +495,4 @@ Your own log is not evidence about the world; the employer's confirmation is. Se
 [verification.md](verification.md).
 
 ### HiBob (Bob Hiring) careers forms
-Seen 2026-10-14: the resume "Add file" control does nothing in automated Chromium (headless or under Xvfb): no file dialog, no upload request, while the form's other Add buttons work. Park the row for the person's own browser. A LinkedIn link to a HiBob role can land on another country's copy of the same ad; check the location and find the right one.
+Seen 2026-10-15: the resume "Add file" control does nothing in automated Chromium (headless or under Xvfb): no file dialog, no upload request, while the form's other Add buttons work. Park the row for the person's own browser. A LinkedIn link to a HiBob role can land on another country's copy of the same ad; check the location and find the right one.
