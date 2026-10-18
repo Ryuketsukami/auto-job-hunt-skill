@@ -368,6 +368,17 @@ Each of these was paid for once. Read them before driving a form, not after.
   legibility first. **Scans only, never the CV**: rasterising the CV destroys its text layer.
 - **Every form may run invisible reCAPTCHA.** No submission counts until a confirmation is on
   screen.
+- **YC Work at a Startup caps a candidate at 5 applications per week.** The cap shows as a
+  browser `alert()` ("You've reached your limit of 5 applications per week") after Send, and the
+  job page then shows no "Applied" marker. Count the week's sends before a YC run, put the best
+  roles first, and defer the rest with the founder note already written.
+- **A posting that asks applicants not to use AI on free-text answers** ("why this role", "a
+  project you're proud of") is a required question you cannot answer truthfully as an agent. Fill
+  everything else, save the prepared answers, and park it for the person to write those answers.
+- **LinkedIn Easy Apply review pages show the saved work-experience title,** which can differ
+  from the CV. Check it on the review page before Submit and fix it in the Work experience step;
+  the same step also accepts a per-application CV upload (captured file input, see above) so the
+  tailored PDF, not the profile default, goes with the application.
 
 ---
 
