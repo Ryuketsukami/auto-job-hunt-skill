@@ -368,6 +368,19 @@ Each of these was paid for once. Read them before driving a form, not after.
   legibility first. **Scans only, never the CV**: rasterising the CV destroys its text layer.
 - **Every form may run invisible reCAPTCHA.** No submission counts until a confirmation is on
   screen.
+- **A remote Windows runner driven over SSH has a ~8,191-character command-line limit** (cmd.exe).
+  Streaming a file into a page in chunks over that link fails silently once a chunk plus its
+  wrapper crosses the limit ("The command line is too long" goes to stderr, the page keeps only
+  what arrived). Keep base64 chunks around 1,800 characters, and verify every upload by byte
+  count before Submit (the page-side code returns the File size; compare it to the local file).
+  A board that keeps earlier uploads (LinkedIn's resume list) will otherwise quietly reuse an old
+  file of the same name. After a run, open the board's saved-resume list and check the newest
+  entry's date and size against what you meant to send.
+- **Drushim keeps at most 4 uploaded CVs** per account; a fifth upload is refused with a modal
+  ("אפשר לשמור עד 4 קורות חיים"). Delete the oldest stored CV (it does not affect applications
+  already sent), upload again, confirm the new file is the selected radio, then submit. First
+  application on a fresh account also asks for years of experience (a range picker) before it
+  sends.
 - **YC Work at a Startup caps a candidate at 5 applications per week.** The cap shows as a
   browser `alert()` ("You've reached your limit of 5 applications per week") after Send, and the
   job page then shows no "Applied" marker. Count the week's sends before a YC run, put the best
