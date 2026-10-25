@@ -479,6 +479,15 @@ opening one.
 - **Close the parked window the moment they say it is handled.** A stray window fights them.
 - Say exactly what is left, in one line: "Open, review, click Submit."
 
+Two form texts also make a role the person's own click, even with full send authority:
+
+- **A personal-completion attestation.** "I certify that I, the undersigned applicant, have
+  personally completed this application" is false the moment an agent fills it. Prepare the CV and
+  every answer, then hand it over; do not tick it on their behalf.
+- **An employer AI policy over free text.** When the form says its essay ("Why us?") must be the
+  candidate's own words, or links to candidate AI guidelines with a confirm box, the agent writes
+  none of it. Hand over the CV and the factual answers; the person writes the essay.
+
 A parked role is **deferred**, never recorded as sent:
 
 ```bash
