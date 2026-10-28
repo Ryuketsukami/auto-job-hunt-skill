@@ -221,6 +221,12 @@ Each of these was paid for once. Read them before driving a form, not after.
   informational, but a failed submit retried later still counts against N: fix validation errors in
   one session.
 - **hCaptcha can interpose as a full image challenge at submit**, not just the checkbox. Park.
+- **The challenge often depends on where the submit comes from.** A form that throws a reCAPTCHA
+  image challenge from a headless server browser may submit cleanly from the person's own signed-in
+  browser on their own network. Try that once before parking; if the challenge shows there too, park.
+- **Driving the person's browser through a CLI session: keep one tab.** Helpers that read "the
+  current tab" lose track when a second tab is open, and snapshots silently describe the wrong page.
+  Close a tab before you open the next, which means parking by record, not by leaving a tab open.
 
 **Workday (myworkdayjobs.com)**
 
