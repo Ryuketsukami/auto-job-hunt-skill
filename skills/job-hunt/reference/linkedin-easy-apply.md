@@ -175,6 +175,10 @@ for the person.
   to the form.
 - **"Follow <company>" is pre-ticked on every form.** Untick it. Following a page is a social action
   nobody authorised.
+- **The Follow checkbox can be rendered without its own ref** in the accessibility snapshot (only
+  its parent wrapper has one). Click the wrapper, then confirm the checkbox reads unchecked.
+- **When looping over postings, give every browser command `< /dev/null`.** An SSH-backed driver
+  reads stdin and silently swallows the rest of the input list.
 - **Saved answers prefill.** LinkedIn reuses earlier answers (years with Python, React, and so on)
   and pre-selects the last resume used. Check every prefill against `profile.md`; a prefill is not a
   fact. That includes the **cover letter box: it can arrive holding the letter written for the
